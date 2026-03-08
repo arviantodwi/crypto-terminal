@@ -1,0 +1,1474 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "Er0fl",
+      "x": -810,
+      "y": 49,
+      "name": "Crypto Terminal Dashboard",
+      "clip": true,
+      "width": 2800,
+      "height": 800,
+      "fill": "#18181B",
+      "children": [
+        {
+          "id": "z4Nib",
+          "type": "ref",
+          "ref": "VSk71",
+          "x": 0,
+          "y": 0,
+          "descendants": {
+            "8oi1E": {
+              "stroke": {
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": {
+                  "type": "color",
+                  "color": "#27272A",
+                  "enabled": false
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "1GhLi",
+          "name": "Main Content",
+          "clip": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "UvVSv",
+              "name": "Content Wrapper",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 24,
+              "padding": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "OBpwM",
+                  "name": "Header",
+                  "enabled": false,
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "R0TVA",
+                      "name": "Header Left",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "aybSP",
+                          "name": "headerTitle",
+                          "fill": "#FAFAFA",
+                          "content": "MARKET OVERVIEW",
+                          "fontFamily": "Space Grotesk",
+                          "fontSize": 40,
+                          "fontWeight": "700",
+                          "letterSpacing": -1
+                        },
+                        {
+                          "type": "text",
+                          "id": "UCmGL",
+                          "name": "headerSubtitle",
+                          "fill": "#71717A",
+                          "content": "REAL-TIME CRYPTOCURRENCY DATA",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "500",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "aw0CY",
+                      "name": "Header Right",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "eCLrU",
+                          "name": "Status Badge",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "#27272A"
+                          },
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "6w31F",
+                              "fill": "#22C55E",
+                              "width": 6,
+                              "height": 6
+                            },
+                            {
+                              "type": "text",
+                              "id": "1lJ0v",
+                              "fill": "#22C55E",
+                              "content": "LIVE",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 10,
+                              "fontWeight": "700",
+                              "letterSpacing": 1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "q7xHP",
+                          "name": "timeBadge",
+                          "fill": "#71717A",
+                          "content": "14:32:45 UTC",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "526qN",
+                  "name": "Cards Container",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "riBz1",
+                      "name": "Crypto Prediction Card",
+                      "width": 678,
+                      "height": 524,
+                      "fill": "#0F0F10",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#27272A"
+                      },
+                      "layout": "vertical",
+                      "padding": 24,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "a21WQ",
+                          "name": "Card Header",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "FEjFH",
+                              "name": "Header Left",
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "TjxTw",
+                                  "name": "Crypto Logo",
+                                  "width": 48,
+                                  "height": 48,
+                                  "fill": "#FACC1515",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "WuiE9",
+                                      "fill": "#FACC15",
+                                      "content": "BITCOIN",
+                                      "textAlign": "center",
+                                      "fontFamily": "JetBrains Mono",
+                                      "fontSize": 14,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "ocIDn",
+                                  "name": "cryptoName",
+                                  "fill": "#FAFAFA",
+                                  "content": "BITCOIN",
+                                  "fontFamily": "JetBrains Mono",
+                                  "fontSize": 16,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "qtccH",
+                              "name": "Header Right",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "alignItems": "end",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "7s8zK",
+                                  "name": "headerDate",
+                                  "fill": "#71717A",
+                                  "content": "MAR 08, 2026",
+                                  "fontFamily": "JetBrains Mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500",
+                                  "letterSpacing": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "jrpmE",
+                                  "name": "headerTime",
+                                  "fill": "#71717A",
+                                  "content": "14:32:45",
+                                  "fontFamily": "JetBrains Mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "10ISy",
+                          "name": "Chart Section",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "gap": 24,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "kDPD5",
+                              "name": "Price To Beat Row",
+                              "stroke": {
+                                "thickness": {
+                                  "bottom": 1
+                                },
+                                "fill": "#FACC1530"
+                              },
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": [
+                                16,
+                                0
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "qTkKo",
+                                  "name": "priceToBeatLabel",
+                                  "fill": "#A1A1AA",
+                                  "content": "LAST 5MIN PRICE",
+                                  "fontFamily": "JetBrains Mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "600",
+                                  "letterSpacing": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Ovkul",
+                                  "name": "priceToBeatValue",
+                                  "fill": "#FACC15",
+                                  "content": "$68,500.00",
+                                  "fontFamily": "Space Grotesk",
+                                  "fontSize": 32,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "pfQlJ",
+                              "name": "Current Price Row",
+                              "stroke": {
+                                "thickness": {
+                                  "bottom": 1
+                                },
+                                "fill": "#27272A"
+                              },
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": [
+                                16,
+                                0
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "j3H1M",
+                                  "name": "currentPriceLabel",
+                                  "fill": "#A1A1AA",
+                                  "content": "CURRENT PRICE",
+                                  "fontFamily": "JetBrains Mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "600",
+                                  "letterSpacing": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "7oWJK",
+                                  "name": "currentPriceValue",
+                                  "fill": "#FAFAFA",
+                                  "content": "$67,842.15",
+                                  "fontFamily": "Space Grotesk",
+                                  "fontSize": 32,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "c6TBm",
+                              "name": "Time Row",
+                              "width": "fill_container",
+                              "gap": 8,
+                              "padding": [
+                                16,
+                                0
+                              ],
+                              "justifyContent": "end",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "UjObf",
+                                  "name": "timeIcon",
+                                  "width": 18,
+                                  "height": 18,
+                                  "iconFontName": "timer",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#71717A"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "bMR0G",
+                                  "name": "timeLabel",
+                                  "fill": "#71717A",
+                                  "content": "02 MINS",
+                                  "fontFamily": "JetBrains Mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500",
+                                  "letterSpacing": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "rn32h",
+                                  "name": "timeLabel",
+                                  "fill": "#71717A",
+                                  "content": "13 SECS",
+                                  "fontFamily": "JetBrains Mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500",
+                                  "letterSpacing": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "45ALr",
+                          "name": "Card Footer",
+                          "gap": 8,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Kalla",
+                              "name": "tri1",
+                              "fill": "#71717A",
+                              "content": "V",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "cDVoe",
+                              "name": "tri2",
+                              "fill": "#71717A",
+                              "content": "V",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "6V6jO",
+                              "name": "tri3",
+                              "fill": "#71717A",
+                              "content": "V",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "rectangle",
+      "id": "DgHqm",
+      "x": -446,
+      "y": -621,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "./image.png",
+        "mode": "fill"
+      },
+      "width": 960,
+      "height": 530
+    },
+    {
+      "type": "frame",
+      "id": "G08Ru",
+      "x": -2564,
+      "y": -375,
+      "name": "UI Kit",
+      "clip": true,
+      "width": 1387,
+      "height": 1236,
+      "cornerRadius": 24,
+      "stroke": {
+        "align": "outside",
+        "thickness": 2,
+        "fill": "#facc15"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "VSk71",
+          "x": 40,
+          "y": 40,
+          "name": "Sidebar",
+          "reusable": true,
+          "width": 210,
+          "height": "fill_container(800)",
+          "fill": "#0F0F10",
+          "stroke": {
+            "thickness": {
+              "right": 1
+            },
+            "fill": "#27272A"
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "qHZpp",
+              "name": "Logo",
+              "width": "fill_container",
+              "stroke": {
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "#27272A"
+              },
+              "gap": 8,
+              "padding": [
+                24,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "eKOEB",
+                  "name": "logo",
+                  "width": 24,
+                  "height": 24,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "path",
+                      "id": "EGIeA",
+                      "x": 0,
+                      "y": 0,
+                      "geometry": "M0 0l24 0 0 24-24 0 0-24z",
+                      "width": 24,
+                      "height": 24
+                    },
+                    {
+                      "type": "path",
+                      "id": "dT4sw",
+                      "x": 2.9998185634613037,
+                      "y": 9.777000427246094,
+                      "geometry": "M3.04518 0c-2.36792 1.3402-3.5376 4.10602-2.84973 6.73852 0.68786 2.6325 3.06105 4.47259 5.78191 4.4831 2.72086 0.01052 5.1082-1.81117 5.81638-4.43827 0.70819-2.6271-0.44007-5.40189-2.79756-6.76035",
+                      "width": 12.00109314918518,
+                      "height": 11.221670150756836,
+                      "stroke": {
+                        "align": "center",
+                        "thickness": 2,
+                        "join": "round",
+                        "cap": "round",
+                        "fill": "#facc15"
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "id": "JJbSZ",
+                      "x": 9.048999786376953,
+                      "y": 9.00051498413086,
+                      "geometry": "M2.948 11.19548c2.28915 1.32268 5.17428 0.99112 7.10373-0.81634 1.92945-1.80747 2.44844-4.66483 1.27786-7.03537-1.17058-2.37054-3.75482-3.69551-6.3629-3.26234-2.60808 0.43317-4.62526 2.52239-4.96669 5.14405",
+                      "width": 11.949974060058594,
+                      "height": 12.000444412231445,
+                      "stroke": {
+                        "align": "center",
+                        "thickness": 2,
+                        "join": "round",
+                        "cap": "round",
+                        "fill": "#facc15"
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "id": "WqUha",
+                      "x": 5.999873638153076,
+                      "y": 3.0013787746429443,
+                      "geometry": "M11.95013 6.78362q0.05-0.386 0.05-0.785c-0.00087-2.70947-1.81749-5.08216-4.43291-5.78982-2.61542-0.70766-5.38059 0.42532-6.74754 2.76469-1.36695 2.33937-0.99645 5.30459 0.90409 7.2357 1.90054 1.93111 4.85947 2.34887 7.22036 1.01943",
+                      "width": 12.000126361846924,
+                      "height": 12.000694513320923,
+                      "stroke": {
+                        "align": "center",
+                        "thickness": 2,
+                        "join": "round",
+                        "cap": "round",
+                        "fill": "#facc15"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "lMtTY",
+                  "name": "logoText",
+                  "fill": "#FAFAFA",
+                  "content": "MY CRYPTO\nTERMINAL",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                  "letterSpacing": 2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "J4X8E",
+              "name": "Navigation",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "padding": [
+                20,
+                0,
+                8,
+                0
+              ],
+              "children": [
+                {
+                  "id": "c94hk",
+                  "type": "ref",
+                  "ref": "S3Vi6",
+                  "x": 0,
+                  "y": 20,
+                  "descendants": {
+                    "deH5v": {
+                      "theme": {}
+                    }
+                  }
+                },
+                {
+                  "type": "group",
+                  "id": "AiQi2",
+                  "name": "Nav Item Group",
+                  "layout": "vertical",
+                  "width": "fill_container",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bHWKg",
+                      "name": "Nav Item Active",
+                      "width": "fill_container",
+                      "fill": "#FACC1515",
+                      "gap": 12,
+                      "padding": [
+                        10,
+                        16,
+                        10,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "sbJFT",
+                          "name": "navIndicator",
+                          "width": 3,
+                          "height": "fill_container",
+                          "fill": "#FACC15"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "BWYsY",
+                          "name": "navDashboardIcon",
+                          "clip": true,
+                          "width": 16,
+                          "height": 16,
+                          "fill": {
+                            "type": "color",
+                            "color": "#ffffffff",
+                            "enabled": false
+                          },
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1
+                          },
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "path",
+                              "id": "eVope",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Vector",
+                              "geometry": "M0 0l24 0 0 24-24 0 0-24z",
+                              "width": 16,
+                              "height": 16,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              }
+                            },
+                            {
+                              "type": "path",
+                              "id": "6QvDC",
+                              "x": 2,
+                              "y": 2,
+                              "name": "Vector",
+                              "geometry": "M6 0c0.53043 0 1.03914 0.21071 1.41421 0.58579 0.37507 0.37507 0.58579 0.88378 0.58579 1.41421l0 6c0 0.53043-0.21071 1.03914-0.58579 1.41421-0.37507 0.37507-0.88378 0.58579-1.41421 0.58579l-4 0c-0.53043 0-1.03914-0.21071-1.41421-0.58579-0.37507-0.37507-0.58579-0.88378-0.58579-1.41421l0-6c0-0.53043 0.21071-1.03914 0.58579-1.41421 0.37507-0.37507 0.88378-0.58579 1.41421-0.58579l4 0z m0 12c0.53043 0 1.03914 0.21071 1.41421 0.58579 0.37507 0.37507 0.58579 0.88378 0.58579 1.41421l0 2c0 0.53043-0.21071 1.03914-0.58579 1.41421-0.37507 0.37507-0.88378 0.58579-1.41421 0.58579l-4 0c-0.53043 0-1.03914-0.21071-1.41421-0.58579-0.37507-0.37507-0.58579-0.88378-0.58579-1.41421l0-2c0-0.53043 0.21071-1.03914 0.58579-1.41421 0.37507-0.37507 0.88378-0.58579 1.41421-0.58579l4 0z m10-4c0.53043 0 1.03914 0.21071 1.41421 0.58579 0.37507 0.37507 0.58579 0.88378 0.58579 1.41421l0 6c0 0.53043-0.21071 1.03914-0.58579 1.41421-0.37507 0.37507-0.88378 0.58579-1.41421 0.58579l-4 0c-0.53043 0-1.03914-0.21071-1.41421-0.58579-0.37507-0.37507-0.58579-0.88378-0.58579-1.41421l0-6c0-0.53043 0.21071-1.03914 0.58579-1.41421 0.37507-0.37507 0.88378-0.58579 1.41421-0.58579l4 0z m0-8c0.53043 0 1.03914 0.21071 1.41421 0.58579 0.37507 0.37507 0.58579 0.88378 0.58579 1.41421l0 2c0 0.53043-0.21071 1.03914-0.58579 1.41421-0.37507 0.37507-0.88378 0.58579-1.41421 0.58579l-4 0c-0.53043 0-1.03914-0.21071-1.41421-0.58579-0.37507-0.37507-0.58579-0.88378-0.58579-1.41421l0-2c0-0.53043 0.21071-1.03914 0.58579-1.41421 0.37507-0.37507 0.88378-0.58579 1.41421-0.58579l4 0z",
+                              "fill": "#ffffff",
+                              "width": 12,
+                              "height": 12,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Xr2vp",
+                          "name": "navDashboardText",
+                          "fill": "#FAFAFA",
+                          "content": "DASHBOARD",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "600",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KvzEZ",
+                      "name": "Nav Item",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "padding": [
+                        10,
+                        16,
+                        10,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "IJeqr",
+                          "name": "navIndicatorHidden",
+                          "width": 3,
+                          "height": "fill_container",
+                          "fill": {
+                            "type": "color",
+                            "color": "#FACC15",
+                            "enabled": false
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KE9Ps",
+                          "name": "navTradeLogIcon",
+                          "clip": true,
+                          "width": 16,
+                          "height": 16,
+                          "fill": {
+                            "type": "color",
+                            "color": "#ffffffff",
+                            "enabled": false
+                          },
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1
+                          },
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "path",
+                              "id": "gSWQb",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Vector",
+                              "geometry": "M0 0l24 0 0 24-24 0 0-24z",
+                              "width": 16,
+                              "height": 16,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              }
+                            },
+                            {
+                              "type": "path",
+                              "id": "8OgFr",
+                              "x": 2.3333332538604736,
+                              "y": 2.3333332538604736,
+                              "name": "Vector",
+                              "geometry": "M12 6l-6-6-6 6 12 0z",
+                              "width": 7.8394775390625,
+                              "height": 3.90625,
+                              "stroke": {
+                                "align": "center",
+                                "thickness": 1.5,
+                                "join": "round",
+                                "cap": "round",
+                                "fill": "#71717a"
+                              }
+                            },
+                            {
+                              "type": "path",
+                              "id": "JsmDk",
+                              "x": 5.828125,
+                              "y": 9.760416984558105,
+                              "name": "Vector",
+                              "geometry": "M12 0l-6 6-6-6 12 0z",
+                              "width": 7.838541507720947,
+                              "height": 3.90625,
+                              "stroke": {
+                                "align": "center",
+                                "thickness": 1.5,
+                                "join": "round",
+                                "cap": "round",
+                                "fill": "#71717a"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "epIeG",
+                          "name": "navTradeLogText",
+                          "fill": "#71717A",
+                          "content": "TRADE_LOG",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "500",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "kgIdE",
+              "name": "Watchlist",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "padding": [
+                8,
+                0
+              ],
+              "children": [
+                {
+                  "id": "ahlrZ",
+                  "type": "ref",
+                  "ref": "S3Vi6",
+                  "x": 0,
+                  "y": 8,
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "descendants": {
+                    "deH5v": {
+                      "content": "// WATCHLIST"
+                    }
+                  }
+                },
+                {
+                  "type": "group",
+                  "id": "wP6S3",
+                  "name": "Watchlist Item Group",
+                  "layout": "vertical",
+                  "width": "fill_container",
+                  "children": [
+                    {
+                      "id": "8oi1E",
+                      "type": "ref",
+                      "ref": "9mPfu",
+                      "x": 0,
+                      "y": 0,
+                      "width": 210,
+                      "height": "fit_content",
+                      "stroke": {
+                        "thickness": {
+                          "bottom": 1
+                        },
+                        "fill": {
+                          "type": "color",
+                          "color": "#27272A",
+                          "enabled": false
+                        }
+                      }
+                    },
+                    {
+                      "id": "Iehyl",
+                      "type": "ref",
+                      "ref": "9mPfu",
+                      "x": 0,
+                      "y": 40.000000000000014,
+                      "gap": 4,
+                      "width": 210,
+                      "height": "fit_content"
+                    },
+                    {
+                      "id": "oB4Od",
+                      "type": "ref",
+                      "ref": "9mPfu",
+                      "x": 0,
+                      "y": 80.00000000000003,
+                      "gap": 4,
+                      "width": 210,
+                      "height": "fit_content"
+                    },
+                    {
+                      "id": "ujPxM",
+                      "type": "ref",
+                      "ref": "9mPfu",
+                      "x": 0,
+                      "y": 120.00000000000004,
+                      "gap": 4,
+                      "width": 210,
+                      "height": "fit_content"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "f4jPk",
+                  "name": "Add Watchlist Item",
+                  "enabled": false,
+                  "width": "fill_container",
+                  "gap": 8,
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "HnpKm",
+                      "name": "addFavIcon",
+                      "width": 16,
+                      "height": 16,
+                      "iconFontName": "plus",
+                      "iconFontFamily": "lucide",
+                      "fill": "#71717A"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Qn49d",
+                      "name": "addFavText",
+                      "fill": "#71717A",
+                      "content": "ADD_WATCHLIST",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "letterSpacing": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "sPfcZ",
+              "name": "Preferences",
+              "width": "fill_container",
+              "layout": "vertical",
+              "padding": [
+                8,
+                0
+              ],
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "bDX8t",
+                  "type": "ref",
+                  "ref": "S3Vi6",
+                  "x": 0,
+                  "y": 8,
+                  "descendants": {
+                    "deH5v": {
+                      "content": "// PREFERENCES"
+                    }
+                  }
+                },
+                {
+                  "type": "group",
+                  "id": "f7AOp",
+                  "name": "Nav Item Group",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "8aZTW",
+                      "name": "Nav Item",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "padding": [
+                        10,
+                        16,
+                        10,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "33atQ",
+                          "name": "navIndicatorHidden",
+                          "width": 3,
+                          "height": "fill_container",
+                          "fill": {
+                            "type": "color",
+                            "color": "#FACC15",
+                            "enabled": false
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hEz2s",
+                          "name": "navSettingsIcon",
+                          "clip": true,
+                          "width": 16,
+                          "height": 16,
+                          "fill": {
+                            "type": "color",
+                            "color": "#ffffffff",
+                            "enabled": false
+                          },
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1
+                          },
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "path",
+                              "id": "PziZ5",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Vector",
+                              "geometry": "M0 0l24 0 0 24-24 0 0-24z",
+                              "width": 16,
+                              "height": 16,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              }
+                            },
+                            {
+                              "type": "path",
+                              "id": "bROtG",
+                              "x": 2,
+                              "y": 2,
+                              "name": "Vector",
+                              "geometry": "M7.325 1.317c0.426-1.756 2.924-1.756 3.35 0 0.06392 0.2638 0.18922 0.50878 0.36571 0.715 0.17649 0.20622 0.39918 0.36785 0.64994 0.47175 0.25076 0.10389 0.52251 0.1471 0.79314 0.12612 0.27062-0.02098 0.53246-0.10557 0.76421-0.24687 1.543-0.94 3.31 0.826 2.37 2.37-0.1411 0.23166-0.22555 0.49334-0.24648 0.76377-0.02093 0.27044 0.02224 0.542 0.12601 0.79261 0.10377 0.25061 0.26521 0.4732 0.4712 0.64967 0.20599 0.17647 0.45071 0.30185 0.71427 0.36595 1.756 0.426 1.756 2.924 0 3.35-0.2638 0.06392-0.50878 0.18922-0.715 0.36571-0.20622 0.17649-0.36786 0.39918-0.47175 0.64994-0.10389 0.25076-0.1471 0.52251-0.12612 0.79314 0.02098 0.27062 0.10557 0.53246 0.24687 0.76421 0.94 1.543-0.826 3.31-2.37 2.37-0.23166-0.1411-0.49334-0.22555-0.76377-0.24648-0.27044-0.02093-0.542 0.02224-0.79261 0.12601-0.25061 0.10377-0.4732 0.26521-0.64967 0.4712-0.17647 0.20599-0.30185 0.45071-0.36595 0.71427-0.426 1.756-2.924 1.756-3.35 0-0.06392-0.2638-0.18922-0.50878-0.36571-0.715-0.17649-0.20622-0.39918-0.36786-0.64994-0.47175-0.25076-0.10389-0.52251-0.1471-0.79314-0.12612-0.27062 0.02098-0.53246 0.10557-0.76421 0.24687-1.543 0.94-3.31-0.826-2.37-2.37 0.1411-0.23166 0.22555-0.49334 0.24648-0.76377 0.02093-0.27044-0.02224-0.542-0.12601-0.79261-0.10377-0.25061-0.26521-0.4732-0.4712-0.64967-0.20599-0.17647-0.45071-0.30185-0.71427-0.36595-1.756-0.426-1.756-2.924 0-3.35 0.2638-0.06392 0.50878-0.18922 0.715-0.36571 0.20622-0.17649 0.36785-0.39918 0.47175-0.64994 0.10389-0.25076 0.1471-0.52251 0.12612-0.79314-0.02098-0.27062-0.10557-0.53246-0.24687-0.76421-0.94-1.543 0.826-3.31 2.37-2.37 1 0.608 2.296 0.07 2.572-1.065z",
+                              "width": 12,
+                              "height": 12,
+                              "stroke": {
+                                "align": "center",
+                                "thickness": 1.5,
+                                "join": "round",
+                                "cap": "round",
+                                "fill": "#71717a"
+                              }
+                            },
+                            {
+                              "type": "path",
+                              "id": "UFOLg",
+                              "x": 6,
+                              "y": 6,
+                              "name": "Vector",
+                              "geometry": "M0 3c0 0.79565 0.31607 1.55871 0.87868 2.12132 0.56261 0.56261 1.32567 0.87868 2.12132 0.87868 0.79565 0 1.55871-0.31607 2.12132-0.87868 0.56261-0.56261 0.87868-1.32567 0.87868-2.12132 0-0.79565-0.31607-1.55871-0.87868-2.12132-0.56261-0.56261-1.32567-0.87868-2.12132-0.87868-0.79565 0-1.55871 0.31607-2.12132 0.87868-0.56261 0.56261-0.87868 1.32567-0.87868 2.12132z",
+                              "width": 4,
+                              "height": 4,
+                              "stroke": {
+                                "align": "center",
+                                "thickness": 1.5,
+                                "join": "round",
+                                "cap": "round",
+                                "fill": "#71717a"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "9hR44",
+                          "name": "navSettingsText",
+                          "fill": "#71717A",
+                          "content": "SETTINGS",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "500",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "S3Vi6",
+          "x": 276,
+          "y": 40,
+          "name": "Sidebar Section Header",
+          "reusable": true,
+          "width": "fill_container(210)",
+          "padding": [
+            0,
+            0,
+            0,
+            2
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "deH5v",
+              "name": "sectionLabel",
+              "fill": "#71717A",
+              "content": "// NAVIGATION",
+              "fontFamily": "JetBrains Mono",
+              "fontSize": 11,
+              "fontWeight": "600",
+              "letterSpacing": 0.66
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "QJFG7",
+          "x": 276,
+          "y": 66,
+          "name": "Change Positive",
+          "reusable": true,
+          "layout": "horizontal",
+          "gap": 2,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "cemGV",
+              "name": "trendUpIcon",
+              "clip": true,
+              "width": 12.329483547613865,
+              "height": 12,
+              "fill": {
+                "type": "color",
+                "color": "#ffffffff",
+                "enabled": false
+              },
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "path",
+                  "id": "4cLcB",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Vector",
+                  "geometry": "M0 0l24 0 0 24-24 0 0-24z",
+                  "width": 12,
+                  "height": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  }
+                },
+                {
+                  "type": "path",
+                  "id": "TQVJl",
+                  "x": 1.5,
+                  "y": 3.5,
+                  "name": "Vector",
+                  "geometry": "M0 10l6-6 4 4 8-8",
+                  "width": 9,
+                  "height": 5,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1.5,
+                    "join": "round",
+                    "cap": "round",
+                    "fill": "#22c55e"
+                  }
+                },
+                {
+                  "type": "path",
+                  "id": "X7IMk",
+                  "x": 7,
+                  "y": 3.5,
+                  "name": "Vector",
+                  "geometry": "M0 0l7 0 0 7",
+                  "width": 3.5,
+                  "height": 3.5,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1.5,
+                    "join": "round",
+                    "cap": "round",
+                    "fill": "#22c55e"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "0hKsx",
+              "name": "changeLabel",
+              "fill": "#22C55E",
+              "content": "+2.4%",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 11,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "XCDE3",
+          "x": 335,
+          "y": 66,
+          "name": "Change Negative",
+          "reusable": true,
+          "layout": "horizontal",
+          "gap": 2,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "6pgzI",
+              "name": "trendDownIcon",
+              "clip": true,
+              "width": 12.001536314394418,
+              "height": 12,
+              "fill": {
+                "type": "color",
+                "color": "#ffffffff",
+                "enabled": false
+              },
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "path",
+                  "id": "c68uo",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Vector",
+                  "geometry": "M0 0l24 0 0 24-24 0 0-24z",
+                  "width": 12,
+                  "height": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  }
+                },
+                {
+                  "type": "path",
+                  "id": "OZAyV",
+                  "x": 1.5,
+                  "y": 3.5,
+                  "name": "Vector",
+                  "geometry": "M0 0l6 6 4-4 8 8",
+                  "width": 9,
+                  "height": 5,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1.5,
+                    "join": "round",
+                    "cap": "round",
+                    "fill": "#ef4444"
+                  }
+                },
+                {
+                  "type": "path",
+                  "id": "cvGm1",
+                  "x": 7,
+                  "y": 5,
+                  "name": "Vector",
+                  "geometry": "M7 0l0 7-7 0",
+                  "width": 3.5,
+                  "height": 3.5,
+                  "stroke": {
+                    "align": "center",
+                    "thickness": 1.5,
+                    "join": "round",
+                    "cap": "round",
+                    "fill": "#ef4444"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "vnBSL",
+              "name": "changeLabel",
+              "fill": "#ef4444",
+              "content": "-2.4%",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 11,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "KyzVU",
+          "x": 290,
+          "y": 94,
+          "name": "Frame 1",
+          "width": "fill_container(210)",
+          "children": [
+            {
+              "type": "frame",
+              "id": "9mPfu",
+              "name": "Sidebar Watchlist Item",
+              "reusable": true,
+              "width": "fill_container",
+              "height": 146,
+              "stroke": {
+                "thickness": {
+                  "bottom": 1
+                }
+              },
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                0,
+                0,
+                0,
+                23
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "SQKFu",
+                  "name": "Info",
+                  "width": "fill_container",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "h6Z8J",
+                      "name": "coinLogo",
+                      "fill": [
+                        "#e0e0e0",
+                        {
+                          "type": "image",
+                          "enabled": true,
+                          "url": "",
+                          "mode": "fill"
+                        }
+                      ],
+                      "width": 16,
+                      "height": 16
+                    },
+                    {
+                      "type": "group",
+                      "id": "KUtxs",
+                      "name": "Symbol Name",
+                      "layout": "horizontal",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MkTJm",
+                          "name": "coinSymbol",
+                          "fill": "#FAFAFA",
+                          "content": "BTC",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "R6STl",
+                          "name": "coinName",
+                          "fill": "#71717a",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Bitcoin",
+                          "fontFamily": "Space Grotesk",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZcD3L",
+                  "name": "Price Group",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "group",
+                      "id": "LAK0U",
+                      "name": "Price",
+                      "layout": "horizontal",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "q8XkC",
+                          "name": "priceCurrency",
+                          "fill": "#FAFAFA",
+                          "content": "$",
+                          "fontFamily": "Space Grotesk",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mir0e",
+                          "name": "price",
+                          "fill": "#FAFAFA",
+                          "content": "67,842",
+                          "fontFamily": "Space Grotesk",
+                          "fontSize": 16,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "eU0NQ",
+                          "name": "priceDecimal",
+                          "fill": "#71717a",
+                          "content": ".21",
+                          "fontFamily": "Space Grotesk",
+                          "fontSize": 16,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "LXRy8",
+                      "type": "ref",
+                      "ref": "XCDE3",
+                      "x": 91,
+                      "y": 3,
+                      "enabled": false
+                    },
+                    {
+                      "id": "WIVUF",
+                      "type": "ref",
+                      "ref": "QJFG7",
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "flipX": false,
+                      "flipY": false,
+                      "x": 91,
+                      "y": 3,
+                      "textGrowth": "auto",
+                      "descendants": {
+                        "cemGV": {
+                          "width": 27.626953125,
+                          "height": 12,
+                          "flipX": false,
+                          "flipY": false,
+                          "x": 0,
+                          "y": 1,
+                          "textGrowth": "auto"
+                        },
+                        "0hKsx": {
+                          "textGrowth": "auto",
+                          "width": 51.25,
+                          "height": 0,
+                          "flipX": false,
+                          "flipY": false,
+                          "x": 29.626953125,
+                          "y": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "themes": {
+    "Theme": [
+      "Default"
+    ]
+  }
+}
