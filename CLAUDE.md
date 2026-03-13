@@ -49,4 +49,12 @@ No test runner is configured.
 
 **React Compiler** is enabled (`reactCompiler: true` in `next.config.ts`) — avoid manual `useMemo`/`useCallback` unless profiling shows a need.
 
+**Icon system** (`src/ui/icon/`):
+- `index.tsx` — `Icon` component + re-exports all glyphs. Uses `tailwind-variants` (`tv`) for size variants: `16` (default) / `14` / `20` / `24`. Stroke weight is derived automatically from size.
+- `glyphs/` — one file per glyph. Two patterns:
+  - **Stroke glyphs**: receive `{ size, strokeWidth }`, render `<svg fill="none" stroke="currentColor" strokeWidth={strokeWidth}>`. No `Filled` suffix.
+  - **Fill glyphs**: receive `{ size }` (strokeWidth is optional and ignored), render `<svg fill="currentColor">`. Must have `Filled` suffix in both filename and exported function name.
+- All SVGs must have `aria-hidden="true"` (icons are decorative; surrounding context provides the accessible label).
+- Usage: `<Icon glyph={Settings} size={20} />` or `<Icon glyph={SettingsFilled} className="text-yellow-400" />`.
+
 **Design files** live in `design/` as `.pen` files (Pencil design tool). Use the `pencil` MCP tools to read/write them — do not use `Read`/`Grep` on `.pen` files directly.
