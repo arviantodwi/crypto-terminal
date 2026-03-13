@@ -13,11 +13,25 @@ pnpm lint:fix     # Auto-fix with Biome (--unsafe)
 
 No test runner is configured.
 
+## File Naming Conventions
+
+- **React components** (`*.tsx`): PascalCase — `MyComponent.tsx`, `PriceChart.tsx`
+- **Hooks** (`use*.ts` / `use*.tsx`): camelCase with `use` prefix — `useMarketData.ts`, `usePriceHistory.ts`
+- **All other files** (utils, lib, types, config): kebab-case — `query-client.ts`, `format-currency.ts`
+
 ## Architecture
 
-**Stack:** Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · TypeScript (strict) · Biome
+**Stack:** Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · TypeScript (strict) · Biome · TanStack Query v5
 
-**App Router structure** — all routes live under `src/app/`. Path alias `@/*` maps to `src/*`.
+**Folder structure** (`src/`):
+- `app/` — Next.js App Router routes only (thin layout wrappers). Path alias `@/*` maps to `src/*`.
+- `features/` — domain features, each with their own `components/`, `hooks/`, `utils/`
+- `ui/` — shared, reusable UI components used across features
+- `hooks/` — shared hooks used across multiple features
+- `utils/` — shared utility/helper functions
+- `lib/` — third-party client configs and adapters (e.g. `query-client.ts`, `Providers.tsx`)
+- `types/` — global TypeScript types and interfaces
+
 
 **Styling system** (`src/app/globals.css`):
 - Tailwind v4 CSS-first config — no `tailwind.config.ts`. All theme customization is in the `@theme inline {}` block in `globals.css`.
