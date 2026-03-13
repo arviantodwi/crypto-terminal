@@ -32,6 +32,9 @@ No test runner is configured.
 - `lib/` — third-party client configs and adapters (e.g. `query-client.ts`, `Providers.tsx`)
 - `types/` — global TypeScript types and interfaces
 
+**TanStack Query (v5):**
+- `QueryClient` is created via `makeQueryClient()` in `src/lib/query-client.ts` — factory function, not a module-level singleton, to avoid cross-request cache leaks in SSR.
+- `src/lib/Providers.tsx` wraps the app with `QueryClientProvider`; client is held in `useState` so it survives re-renders without being recreated. Default `staleTime`: 60 s.
 
 **Styling system** (`src/app/globals.css`):
 - Tailwind v4 CSS-first config — no `tailwind.config.ts`. All theme customization is in the `@theme inline {}` block in `globals.css`.
