@@ -1,13 +1,14 @@
 import { tv, type VariantProps } from 'tailwind-variants';
 
 export interface GlyphProps {
-  size: 24 | 20 | 16 | 14;
+  size: 24 | 20 | 16 | 14 | 12;
   strokeWidth?: number;
 }
 
 export type GlyphComponent = React.ComponentType<GlyphProps>;
 
 const strokeWeightMap = {
+  12: 1.25,
   14: 1.25,
   16: 1.5,
   20: 1.75,
@@ -21,6 +22,7 @@ const iconVariants = tv({
   },
   variants: {
     size: {
+      12: 'size-3',
       14: 'size-3.5',
       16: 'size-4',
       20: 'size-5',
