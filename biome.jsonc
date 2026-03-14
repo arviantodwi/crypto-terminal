@@ -68,6 +68,9 @@
     },
     "enabled": true,
     "rules": {
+      "nursery": {
+        "useSortedClasses": "info"
+      },
       "recommended": true,
       "suspicious": {
         "noUnknownAtRules": "off"
