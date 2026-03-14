@@ -21,7 +21,7 @@ No test runner is configured.
 
 ## Architecture
 
-**Stack:** Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · TypeScript (strict) · Biome · TanStack Query v5
+**Stack:** Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Tailwind Variants v3 · TypeScript (strict) · Biome · TanStack Query v5
 
 **Folder structure** (`src/`):
 - `app/` — Next.js App Router routes only (thin layout wrappers). Path alias `@/*` maps to `src/*`.
@@ -57,4 +57,8 @@ No test runner is configured.
 - All SVGs must have `aria-hidden="true"` (icons are decorative; surrounding context provides the accessible label).
 - Usage: `<Icon glyph={Settings} size={20} />` or `<Icon glyph={SettingsFilled} className="text-yellow-400" />`.
 
-**Design files** live in `design/` as `.pen` files (Pencil design tool). Use the `pencil` MCP tools to read/write them — do not use `Read`/`Grep` on `.pen` files directly.
+**Figma to Code:**
+- If an element in the Figma node uses Space Grotesk font, apply `font-sans` utility class.
+- If an element in the Figma node uses JetBrains Mono font, apply `font-mono` utility class.
+- Always use Tailwind Variants (`tv`) when converting designs to UI code.
+- Ensure the rendered UI appearance matches the Figma design as closely as possible.
