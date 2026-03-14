@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { JetBrains_Mono, Space_Grotesk } from 'next/font/google';
+import { Sidebar } from '@/features/Sidebar';
 import { Providers } from '@/lib/Providers';
 import './globals.css';
 
@@ -27,9 +28,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}>
         <Providers>
-          <main className="min-h-dvh min-w-dvw max-w-dvw border border-border bg-neutral-900 font-sans text-text">
-            {children}
-          </main>
+          <div className="flex min-h-dvh">
+            <Sidebar />
+            <main className="z-0 flex-1 bg-neutral-900 pl-52.5 font-sans text-text">
+              {children}
+            </main>
+          </div>
         </Providers>
       </body>
     </html>

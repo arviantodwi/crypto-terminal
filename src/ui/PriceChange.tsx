@@ -30,7 +30,7 @@ export function PriceChange({ className, value }: PriceChangeProps) {
     <span className={priceChangeVariants({ className, kind })}>
       <Icon glyph={glyph} size={12} />
       <span>{isPositive ? '+' : '-'}</span>
-      <span>{Math.abs(value).toFixed(1)}</span>
+      <span>{Math.abs(value).toFixed(2)}</span>
       <span>%</span>
     </span>
   );
