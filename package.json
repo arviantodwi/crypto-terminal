@@ -2,29 +2,16 @@
   "name": "crypto-terminal",
   "version": "0.1.0",
   "private": true,
+  "description": "Real-time cryptocurrency terminal with Binance market data streaming",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "biome check",
-    "lint:fix": "biome check --write --unsafe"
+    "dev:web": "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build",
+    "start:web": "pnpm --filter web start",
+    "lint:web": "pnpm --filter web lint",
+    "lint:fix:web": "pnpm --filter web lint:fix"
   },
-  "dependencies": {
-    "@tanstack/react-query": "^5.90.21",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.4.6",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^24",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "babel-plugin-react-compiler": "1.0.0",
-    "tailwind-merge": "^3",
-    "tailwind-variants": "^3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
   }
 }

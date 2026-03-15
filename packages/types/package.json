@@ -1,0 +1,8 @@
+{
+  "description": "Shared TypeScript types for crypto-terminal monorepo",
+  "main": "./index.ts",
+  "name": "@crypto-terminal/types",
+  "private": true,
+  "types": "./index.ts",
+  "version": "0.1.0"
+}

@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(gh issue:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm lint:fix)",
