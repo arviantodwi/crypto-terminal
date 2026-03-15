@@ -20,7 +20,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
+    "includes": [
+      "apps/web/**",
+      "packages/**",
+      "!**/node_modules",
+      "!**/.next",
+      "!**/dist",
+      "!**/build"
+    ]
   },
   "formatter": {
     "attributePosition": "auto",
