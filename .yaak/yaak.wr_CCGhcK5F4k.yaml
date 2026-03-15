@@ -1,0 +1,16 @@
+type: websocket_request
+model: websocket_request
+id: wr_CCGhcK5F4k
+createdAt: 2026-03-15T18:24:21.532664
+updatedAt: 2026-03-15T20:29:34.513370
+workspaceId: wk_bSocGwdQUk
+folderId: fl_Ph6UPdEST4
+authentication: {}
+authenticationType: null
+description: ''
+headers: []
+message: ''
+name: Trade Streams
+sortPriority: 2000.0
+url: ws://localhost:3001/ws
+urlParameters: []
