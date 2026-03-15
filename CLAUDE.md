@@ -2,28 +2,50 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Monorepo Structure
+
+This is a **pnpm workspace monorepo** with multiple applications:
+
+### Apps
+- **`apps/web/`** — Next.js 16 frontend (React 19, Tailwind CSS v4, TypeScript)
+
+### Packages
+- **`packages/types/`** — Shared TypeScript types (future use)
+
+### Root-Level Files
+Keep these at root: `.editorconfig`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `biome.jsonc`, `.claude/`, `.opencode/`, `.vscode/`, `design/`
+
 ## Commands
 
+### Monorepo (Root)
+
 ```bash
-pnpm dev          # Start dev server
-pnpm build        # Production build
-pnpm lint         # Check with Biome
-pnpm lint:fix     # Auto-fix with Biome (--unsafe)
+pnpm dev:web       # Run Next.js app only
 ```
 
-No test runner is configured.
+### Next.js App (`apps/web/`)
+
+```bash
+pnpm dev           # Start dev server (localhost:3000)
+pnpm build         # Production build
+pnpm start         # Start production server
+pnpm lint          # Check with Biome
+pnpm lint:fix      # Auto-fix with Biome (--unsafe)
+```
 
 ## File Naming Conventions
+
+Applies to `apps/web/` and `packages/types/` only:
 
 - **React components** (`*.tsx`): PascalCase — `MyComponent.tsx`, `PriceChart.tsx`
 - **Hooks** (`use*.ts` / `use*.tsx`): camelCase with `use` prefix — `useMarketData.ts`, `usePriceHistory.ts`
 - **All other files** (utils, lib, types, config): kebab-case — `query-client.ts`, `format-currency.ts`
 
-## Architecture
+## Next.js App Architecture
 
 **Stack:** Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Tailwind Variants v3 · TypeScript (strict) · Biome · TanStack Query v5
 
-**Folder structure** (`src/`):
+**Folder structure** (`apps/web/src/`):
 - `app/` — Next.js App Router routes only (thin layout wrappers). Path alias `@/*` maps to `src/*`.
 - `features/` — domain features, each with their own `components/`, `hooks/`, `utils/`
 - `ui/` — shared, reusable UI components used across features
