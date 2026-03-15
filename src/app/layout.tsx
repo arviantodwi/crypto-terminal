@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { JetBrains_Mono, Space_Grotesk } from 'next/font/google';
+import { JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { Sidebar } from '@/features/Sidebar';
 import { Providers } from '@/lib/Providers';
 import './globals.css';
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
+const spaceGrotesk = localFont({
+  src: './fonts/SpaceGrotesk[wght].woff2',
   variable: '--font-space-grotesk',
 });
 
