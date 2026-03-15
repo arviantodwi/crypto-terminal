@@ -4,11 +4,11 @@
   "private": true,
   "description": "Real-time cryptocurrency terminal with Binance market data streaming",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "biome check",
-    "lint:fix": "biome check --write --unsafe"
+    "dev:web": "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build",
+    "start:web": "pnpm --filter web start",
+    "lint:web": "pnpm --filter web lint",
+    "lint:fix:web": "pnpm --filter web lint:fix"
   },
   "engines": {
     "node": ">=20",
