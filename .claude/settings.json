@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(gh issue:*)",
+      "Bash(/Users/arvi/Repos/me/crypto-terminal/apps/binance-stream/.venv/bin/python --version)",
       "Bash(pnpm build:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm lint:fix)",
