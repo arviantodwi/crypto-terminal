@@ -41,3 +41,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+poetry.lock
