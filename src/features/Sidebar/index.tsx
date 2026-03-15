@@ -9,20 +9,21 @@ import {
   TriangleUpDown,
   TriangleUpDownFilled,
 } from '@/ui/icon';
-import { NavItem } from './components/NavItem';
+import { NavItem, type NavItemProps } from './components/NavItem';
 import { SectionHeader } from './components/SectionHeader';
-import { Ticker } from './components/Ticker';
+import { Ticker, type TickerProps } from './components/Ticker';
+import { WatchlistEmpty } from './components/WatchlistEmpty';
 
-const PRIMARY_NAV_ITEMS = [
+const PRIMARY_NAV_ITEMS: NavItemProps[] = [
   { activeGlyph: LayoutDashboardFilled, glyph: LayoutDashboard, href: '/', label: 'Dashboard' },
   { activeGlyph: TriangleUpDownFilled, glyph: TriangleUpDown, href: '/trades', label: 'Trade Log' },
 ] as const;
 
-const PREFERENCES_NAV_ITEMS = [
+const PREFERENCES_NAV_ITEMS: NavItemProps[] = [
   { activeGlyph: SettingsFilled, glyph: Settings, href: '/settings', label: 'Settings' },
 ];
 
-const TICKERS = [
+const TICKERS: TickerProps[] = [
   {
     logo: 'https://coin-images.coingecko.com/coins/images/1/thumb/bitcoin.png',
     name: 'Bitcoin',
@@ -51,7 +52,7 @@ const TICKERS = [
     priceChange: 0.96,
     symbol: 'NEAR',
   },
-] as const;
+];
 
 export function Sidebar() {
   return (
@@ -80,11 +81,15 @@ export function Sidebar() {
         <div className="sticky inset-y-0 top-0 z-2 bg-bg py-2">
           <SectionHeader title="Watchlist" />
         </div>
-        <div className="pl-5.5">
-          {TICKERS.map(ticker => (
-            <Ticker key={ticker.symbol} {...ticker} />
-          ))}
-        </div>
+        {TICKERS.length === 0 ? (
+          <WatchlistEmpty />
+        ) : (
+          <div className="pl-5.5">
+            {TICKERS.map(ticker => (
+              <Ticker key={ticker.symbol} {...ticker} />
+            ))}
+          </div>
+        )}
       </div>
 
       <nav className="flex flex-col gap-1.5 py-2">

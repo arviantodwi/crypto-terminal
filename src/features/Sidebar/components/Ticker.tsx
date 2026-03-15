@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { Price } from '@/ui/Price';
 import { PriceChange } from '@/ui/PriceChange';
 
-interface TickerProps {
+export interface TickerProps {
   logo?: string;
   name: string;
   price: number;

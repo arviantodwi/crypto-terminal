@@ -16,7 +16,7 @@ const navItemVariants = tv({
   },
 });
 
-interface NavItemProps {
+export interface NavItemProps {
   activeGlyph: GlyphComponent;
   glyph: GlyphComponent;
   href: string;
