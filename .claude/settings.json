@@ -1,8 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh issue:*)",
       "Bash(/Users/arvi/Repos/me/crypto-terminal/apps/binance-stream/.venv/bin/python --version)",
+      "Bash(gh issue:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm lint:fix)",
@@ -10,7 +10,8 @@
       "mcp__figma-bridge__get_document",
       "mcp__figma-bridge__get_node",
       "mcp__figma-bridge__get_screenshot",
-      "mcp__figma-bridge__get_selection"
+      "mcp__figma-bridge__get_selection",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
