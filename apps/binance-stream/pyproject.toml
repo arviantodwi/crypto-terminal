@@ -13,7 +13,6 @@ uvicorn = { extras = ["standard"], version = "^0.34.0" }
 websockets = "^14.1"
 asyncpg = "^0.30.0"
 python-dotenv = "^1.0.0"
-binance-connector = { extras = ["usds-futures"], version = "^3.9.1" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.0"

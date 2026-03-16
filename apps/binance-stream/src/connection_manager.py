@@ -36,4 +36,3 @@ class ConnectionManager:
         return len(self._clients)
 
 
-manager = ConnectionManager()
