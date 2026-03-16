@@ -4,5 +4,9 @@
     "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit"
   },
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "python.analysis.extraPaths": ["./apps/binance-stream/src"],
+  "python.defaultInterpreterPath": "./apps/binance-stream/.venv/bin/python",
+  "python-envs.defaultEnvManager": "ms-python.python:poetry",
+  "python-envs.defaultPackageManager": "ms-python.python:poetry"
 }

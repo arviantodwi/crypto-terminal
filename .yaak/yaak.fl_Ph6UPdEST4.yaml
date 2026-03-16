@@ -1,0 +1,13 @@
+type: folder
+model: folder
+id: fl_Ph6UPdEST4
+createdAt: 2026-03-15T20:25:20.720095
+updatedAt: 2026-03-15T20:25:23.542919
+workspaceId: wk_bSocGwdQUk
+folderId: null
+authentication: {}
+authenticationType: null
+description: ''
+headers: []
+name: Binance Stream
+sortPriority: 1000.0

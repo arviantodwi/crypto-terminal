@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "binance-stream"
+version = "0.1.0"
+description = "Binance WebSocket streamer with FastAPI"
+authors = ["Arvianto D. Wicaksono <dev@arvian.to>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.0"
+uvicorn = { extras = ["standard"], version = "^0.34.0" }
+websockets = "^14.1"
+asyncpg = "^0.30.0"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
