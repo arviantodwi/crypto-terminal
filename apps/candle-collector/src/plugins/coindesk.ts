@@ -43,7 +43,7 @@ async function coindeskPlugin(fastify: FastifyInstance): Promise<void> {
     toTs: number;
     aggregate: number;
   }): Promise<CoindeskRecord[]> {
-    const url = new URL('/spot/v1/historical/minutes', baseUrl);
+    const url = new URL('/futures/v1/historical/minutes', baseUrl);
     url.searchParams.set('market', 'binance');
     url.searchParams.set('instrument', instrument);
     url.searchParams.set('groups', 'OHLC,Trade,Volume');

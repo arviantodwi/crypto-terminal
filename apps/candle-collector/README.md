@@ -43,7 +43,7 @@ Runs the paginated CoinDesk fetch and upserts candles into PostgreSQL.
 
 ```json
 {
-  "instrument": "BTC-USDT-VANILLA-PERPETUAL",
+  "instrument": "BTCUSDT",
   "to_ts": 1773926478,
   "aggregate": 5,
   "pages": 10
@@ -61,7 +61,7 @@ Runs the paginated CoinDesk fetch and upserts candles into PostgreSQL.
 
 ```json
 {
-  "instrument": "BTC-USDT-VANILLA-PERPETUAL",
+  "instrument": "BTCUSDT",
   "pages_fetched": 10,
   "total_records": 9847,
   "inserted": 9801,
