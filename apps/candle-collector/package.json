@@ -1,0 +1,19 @@
+{
+  "name": "candle-collector",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fetches historical 5-minute OHLC data from CoinDesk and stores it in PostgreSQL",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "fastify-plugin": "^5.0.1",
+    "pg": "^8.13.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
