@@ -1,24 +1,11 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type pg from 'pg';
+import { ohlcCandles, type NewOhlcCandle } from '../../db/schema.js';
 
 interface FetchOhlcBody {
   instrument: string;
   to_ts?: number;
   aggregate?: number;
   pages?: number;
-}
-
-interface NormalizedCandle {
-  open_time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-  quote_volume: number;
-  num_trades: number;
-  instrument: string;
-  timeframe: string;
 }
 
 interface CoindeskRecord {
@@ -51,7 +38,7 @@ function getClosestAggregateTs(intervalSeconds: number): number {
   return Math.floor(nowSeconds / intervalSeconds) * intervalSeconds;
 }
 
-function normalize(record: CoindeskRecord, instrument: string, timeframe: string): NormalizedCandle {
+function normalize(record: CoindeskRecord, instrument: string, timeframe: string): NewOhlcCandle {
   return {
     open_time: record.TIMESTAMP,
     open: record.OPEN,
@@ -67,37 +54,18 @@ function normalize(record: CoindeskRecord, instrument: string, timeframe: string
 }
 
 async function upsertCandles(
-  pool: pg.Pool,
-  candles: NormalizedCandle[],
+  db: FastifyRequest['server']['db'],
+  candles: NewOhlcCandle[],
 ): Promise<{ inserted: number; skipped: number }> {
   if (candles.length === 0) return { inserted: 0, skipped: 0 };
 
-  const values: unknown[] = [];
-  const placeholders = candles.map((c, i) => {
-    const base = i * 10;
-    values.push(
-      c.instrument,
-      c.open_time,
-      c.timeframe,
-      c.open,
-      c.high,
-      c.low,
-      c.close,
-      c.volume,
-      c.quote_volume,
-      c.num_trades,
-    );
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10})`;
-  });
+  const result = await db
+    .insert(ohlcCandles)
+    .values(candles)
+    .onConflictDoNothing()
+    .returning({ instrument: ohlcCandles.instrument });
 
-  const sql = `
-    INSERT INTO ohlc_candles (instrument, open_time, timeframe, open, high, low, close, volume, quote_volume, num_trades)
-    VALUES ${placeholders.join(', ')}
-    ON CONFLICT (instrument, open_time, timeframe) DO NOTHING
-  `;
-
-  const result = await pool.query(sql, values);
-  const inserted = result.rowCount ?? 0;
+  const inserted = result.length;
   const skipped = candles.length - inserted;
   return { inserted, skipped };
 }
@@ -155,7 +123,7 @@ export async function fetchOhlcHandler(
 
       let insertResult: { inserted: number; skipped: number };
       try {
-        insertResult = await upsertCandles(request.server.pg, candles);
+        insertResult = await upsertCandles(request.server.db, candles);
       } catch (err) {
         request.log.error({ err, instrument, page }, '[ohlc] Database write failed');
         return reply.code(500).send({

@@ -11,6 +11,10 @@ cp .env.example .env
 # Fill in required values in .env
 
 pnpm install
+
+# Generate and apply the initial database migration
+pnpm db:generate
+pnpm db:migrate
 ```
 
 ## Running
@@ -79,23 +83,19 @@ Runs the paginated CoinDesk fetch and upserts candles into PostgreSQL.
 
 ## Database
 
-The service expects an `ohlc_candles` table:
+The schema is managed by [Drizzle ORM](https://orm.drizzle.team/). The table definition lives in `src/db/schema.ts` and is the single source of truth for both the database and TypeScript types.
 
-```sql
-CREATE TABLE IF NOT EXISTS ohlc_candles (
-  instrument   VARCHAR(100)  NOT NULL,
-  open_time    BIGINT        NOT NULL,
-  timeframe    VARCHAR(10)   NOT NULL,
-  open         FLOAT8        NOT NULL,
-  high         FLOAT8        NOT NULL,
-  low          FLOAT8        NOT NULL,
-  close        FLOAT8        NOT NULL,
-  volume       FLOAT8        NOT NULL,
-  quote_volume FLOAT8        NOT NULL,
-  num_trades   BIGINT        NOT NULL,
-  PRIMARY KEY (instrument, open_time, timeframe)
-);
+### Migrations
+
+```bash
+# Generate a new migration after schema changes
+pnpm db:generate
+
+# Apply pending migrations to the database (requires DATABASE_URL in .env)
+pnpm db:migrate
 ```
+
+Migration files are stored in `src/db/migrations/` and should be committed to the repository.
 
 ## Environment Variables
 
