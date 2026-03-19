@@ -1,8 +1,8 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import pg from 'pg';
-import { createDb, type Db } from '../db/client.js';
-import { config } from '../config.js';
+import { createDb, type Db } from '../db/client';
+import { config } from '../config';
 
 const { Pool } = pg;
 

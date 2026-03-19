@@ -1,8 +1,8 @@
 import Fastify from 'fastify';
-import { config } from './config.js';
-import coindeskPlugin from './plugins/coindesk.js';
-import postgresPlugin from './plugins/postgres.js';
-import { ohlcRoutes } from './routes/ohlc/index.js';
+import { config } from './config';
+import coindeskPlugin from './plugins/coindesk';
+import postgresPlugin from './plugins/postgres';
+import { ohlcRoutes } from './routes/ohlc/index';
 
 export async function buildApp() {
   const fastify = Fastify({

@@ -1,5 +1,5 @@
-import { config } from './config.js';
-import { buildApp } from './app.js';
+import { config } from './config';
+import { buildApp } from './app';
 
 const fastify = await buildApp();
 

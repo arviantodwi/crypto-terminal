@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
-import { config } from '../config.js';
+import { config } from '../config';
 
 interface CoindeskRecord {
   TIMESTAMP: number;

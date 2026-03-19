@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { ohlcvCandles, type NewOhlcvCandle } from '../../db/schema.js';
+import { ohlcvCandles, type NewOhlcvCandle } from '../../db/schema';
 
 interface FetchOhlcBody {
   instrument: string;
