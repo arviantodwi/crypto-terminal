@@ -1,14 +1,48 @@
+import type { FastifyRequest, FastifyReply } from 'fastify';
+import type pg from 'pg';
+
+interface FetchOhlcBody {
+  instrument: string;
+  to_ts?: number;
+  pages?: number;
+}
+
+interface NormalizedCandle {
+  open_time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  quote_volume: number;
+  instrument: string;
+}
+
+interface CoindeskRecord {
+  TIMESTAMP: number;
+  OPEN: number;
+  HIGH: number;
+  LOW: number;
+  CLOSE: number;
+  VOLUME: number;
+  QUOTE_VOLUME: number;
+}
+
+interface AppError extends Error {
+  statusCode?: number;
+}
+
 // In-memory lock: tracks instruments currently being fetched
-const activeFetches = new Set();
+const activeFetches = new Set<string>();
 
 const INTERVAL_SECONDS = 300; // 5 minutes
 
-/**
- * Normalize a raw CoinDesk record to the internal schema.
- * @param {object} record
- * @param {string} instrument
- */
-function normalize(record, instrument) {
+function getClosest5MinTs(): number {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  return Math.floor(nowSeconds / INTERVAL_SECONDS) * INTERVAL_SECONDS;
+}
+
+function normalize(record: CoindeskRecord, instrument: string): NormalizedCandle {
   return {
     open_time: record.TIMESTAMP,
     open: record.OPEN,
@@ -21,17 +55,13 @@ function normalize(record, instrument) {
   };
 }
 
-/**
- * Batch-upsert candles into the ohlc_candles table.
- * Returns { inserted, skipped }.
- * @param {import('pg').Pool} pool
- * @param {Array} candles
- */
-async function upsertCandles(pool, candles) {
+async function upsertCandles(
+  pool: pg.Pool,
+  candles: NormalizedCandle[],
+): Promise<{ inserted: number; skipped: number }> {
   if (candles.length === 0) return { inserted: 0, skipped: 0 };
 
-  // Build parameterized query
-  const values = [];
+  const values: unknown[] = [];
   const placeholders = candles.map((c, i) => {
     const base = i * 8;
     values.push(c.open_time, c.instrument, c.open, c.high, c.low, c.close, c.volume, c.quote_volume);
@@ -50,7 +80,10 @@ async function upsertCandles(pool, candles) {
   return { inserted, skipped };
 }
 
-export async function fetchOhlcHandler(request, reply) {
+export async function fetchOhlcHandler(
+  request: FastifyRequest<{ Body: FetchOhlcBody }>,
+  reply: FastifyReply,
+): Promise<void> {
   const { instrument, to_ts, pages = 10 } = request.body;
 
   // 409 — in-progress lock
@@ -65,25 +98,26 @@ export async function fetchOhlcHandler(request, reply) {
   activeFetches.add(instrument);
   const startTime = Date.now();
 
-  let currentToTs = to_ts;
+  let currentToTs = to_ts ?? getClosest5MinTs();
   let pagesFetched = 0;
   let totalRecords = 0;
   let totalInserted = 0;
   let totalSkipped = 0;
-  let earliestTs = null;
-  let latestTs = null;
+  let earliestTs: number | null = null;
+  let latestTs: number | null = null;
 
   try {
     for (let page = 1; page <= pages; page++) {
-      let rawData;
+      let rawData: CoindeskRecord[];
       try {
         rawData = await request.server.coindesk.fetchPage({ instrument, toTs: currentToTs });
       } catch (err) {
+        const appErr = err as AppError;
         request.log.error({ err, instrument, page }, '[ohlc] CoinDesk fetch failed');
-        return reply.code(err.statusCode ?? 502).send({
-          statusCode: err.statusCode ?? 502,
+        return reply.code(appErr.statusCode ?? 502).send({
+          statusCode: appErr.statusCode ?? 502,
           error: 'Bad Gateway',
-          message: err.message,
+          message: appErr.message,
         });
       }
 
@@ -95,7 +129,7 @@ export async function fetchOhlcHandler(request, reply) {
 
       const candles = rawData.map((r) => normalize(r, instrument));
 
-      let insertResult;
+      let insertResult: { inserted: number; skipped: number };
       try {
         insertResult = await upsertCandles(request.server.pg, candles);
       } catch (err) {

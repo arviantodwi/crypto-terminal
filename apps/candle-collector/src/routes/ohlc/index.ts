@@ -1,9 +1,7 @@
+import type { FastifyInstance } from 'fastify';
 import { fetchOhlcHandler } from './handler.js';
 import { fetchOhlcSchema } from './schema.js';
 
-/**
- * @param {import('fastify').FastifyInstance} fastify
- */
-export async function ohlcRoutes(fastify) {
+export async function ohlcRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/ohlc/fetch', { schema: fetchOhlcSchema }, fetchOhlcHandler);
 }

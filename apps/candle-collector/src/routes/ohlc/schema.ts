@@ -1,7 +1,7 @@
 export const fetchOhlcSchema = {
   body: {
     type: 'object',
-    required: ['instrument', 'to_ts'],
+    required: ['instrument'],
     additionalProperties: false,
     properties: {
       instrument: { type: 'string', minLength: 1 },

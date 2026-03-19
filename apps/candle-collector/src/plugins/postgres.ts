@@ -1,10 +1,17 @@
 import fp from 'fastify-plugin';
+import type { FastifyInstance } from 'fastify';
 import pg from 'pg';
 import { config } from '../config.js';
 
 const { Pool } = pg;
 
-async function postgresPlugin(fastify) {
+declare module 'fastify' {
+  interface FastifyInstance {
+    pg: pg.Pool;
+  }
+}
+
+async function postgresPlugin(fastify: FastifyInstance): Promise<void> {
   const pool = new Pool({ connectionString: config.database.url });
 
   // Connectivity check on startup

@@ -1,15 +1,45 @@
 import fp from 'fastify-plugin';
+import type { FastifyInstance } from 'fastify';
 import { config } from '../config.js';
 
-async function coindeskPlugin(fastify) {
+interface CoindeskRecord {
+  TIMESTAMP: number;
+  OPEN: number;
+  HIGH: number;
+  LOW: number;
+  CLOSE: number;
+  VOLUME: number;
+  QUOTE_VOLUME: number;
+}
+
+interface CoindeskResponse {
+  Data?: CoindeskRecord[];
+  Err?: Record<string, unknown>;
+}
+
+interface AppError extends Error {
+  statusCode?: number;
+  details?: unknown;
+}
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    coindesk: {
+      fetchPage: (options: { instrument: string; toTs: number }) => Promise<CoindeskRecord[]>;
+    };
+  }
+}
+
+async function coindeskPlugin(fastify: FastifyInstance): Promise<void> {
   const { baseUrl, apiKey } = config.coindesk;
 
-  /**
-   * Fetch one page of OHLC data from CoinDesk.
-   * @param {{ instrument: string, toTs: number }} options
-   * @returns {Promise<Array>} Raw Data array from the response
-   */
-  async function fetchPage({ instrument, toTs }) {
+  async function fetchPage({
+    instrument,
+    toTs,
+  }: {
+    instrument: string;
+    toTs: number;
+  }): Promise<CoindeskRecord[]> {
     const url = new URL('/spot/v1/historical/minutes', baseUrl);
     url.searchParams.set('market', 'binance');
     url.searchParams.set('instrument', instrument);
@@ -28,16 +58,16 @@ async function coindeskPlugin(fastify) {
 
     if (response.status !== 200) {
       const body = await response.text().catch(() => '');
-      const error = new Error(`CoinDesk returned HTTP ${response.status}`);
+      const error: AppError = new Error(`CoinDesk returned HTTP ${response.status}`);
       error.statusCode = 502;
       error.details = { httpStatus: response.status, body };
       throw error;
     }
 
-    const json = await response.json();
+    const json: CoindeskResponse = await response.json();
 
     if (json.Err && Object.keys(json.Err).length > 0) {
-      const error = new Error('CoinDesk returned a structured error');
+      const error: AppError = new Error('CoinDesk returned a structured error');
       error.statusCode = 502;
       error.details = { coinDeskError: json.Err };
       throw error;

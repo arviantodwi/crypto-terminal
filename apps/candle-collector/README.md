@@ -23,7 +23,7 @@ pnpm dev
 pnpm start
 ```
 
-The service listens on `PORT` (default: `3001`).
+The service listens on `PORT` (default: `3002`).
 
 ## Endpoints
 
@@ -45,11 +45,11 @@ Runs the paginated CoinDesk fetch and upserts candles into PostgreSQL.
 }
 ```
 
-| Field        | Type    | Required | Description                                                          |
-|--------------|---------|----------|----------------------------------------------------------------------|
-| `instrument` | string  | ✅        | CoinDesk instrument identifier                                       |
-| `to_ts`      | integer | ✅        | Unix timestamp — start paginating backwards from here                |
-| `pages`      | integer | ❌        | Pages of 1,000 candles to fetch. Defaults to `10` (≈10,000). Max `20` |
+| Field        | Type    | Required | Description                                                                                         |
+|--------------|---------|----------|-----------------------------------------------------------------------------------------------------|
+| `instrument` | string  | ✅        | CoinDesk instrument identifier                                                                      |
+| `to_ts`      | integer | ❌        | Unix timestamp — start paginating backwards from here. Defaults to the closest 5-minute boundary before now |
+| `pages`      | integer | ❌        | Pages of 1,000 candles to fetch. Defaults to `10` (≈10,000). Max `20`                              |
 
 **Successful response:**
 
@@ -102,5 +102,5 @@ See [`.env.example`](.env.example) for all variables with descriptions.
 | `COINDESK_API_KEY`  | ✅        | —       | API key for CoinDesk requests          |
 | `COINDESK_BASE_URL` | ✅        | —       | `https://data-api.coindesk.com`        |
 | `DATABASE_URL`      | ✅        | —       | PostgreSQL connection string           |
-| `PORT`              | ❌        | `3001`  | Port the service listens on            |
+| `PORT`              | ❌        | `3002`  | Port the service listens on            |
 | `LOG_LEVEL`         | ❌        | `info`  | Pino log level                         |

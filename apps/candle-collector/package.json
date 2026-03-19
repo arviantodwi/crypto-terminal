@@ -5,13 +5,21 @@
   "description": "Fetches historical 5-minute OHLC data from CoinDesk and stores it in PostgreSQL",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",
     "pg": "^8.13.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
   },
   "engines": {
     "node": ">=20"
