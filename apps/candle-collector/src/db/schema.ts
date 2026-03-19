@@ -1,7 +1,7 @@
 import { bigint, doublePrecision, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 
-export const ohlcCandles = pgTable(
-  'ohlc_history',
+export const ohlcvCandles = pgTable(
+  'ohlcv_candles',
   {
     instrument: varchar('instrument', { length: 100 }).notNull(),
     open_time: bigint('open_time', { mode: 'number' }).notNull(),
@@ -17,4 +17,4 @@ export const ohlcCandles = pgTable(
   (table) => [primaryKey({ columns: [table.instrument, table.open_time, table.timeframe] })],
 );
 
-export type NewOhlcCandle = typeof ohlcCandles.$inferInsert;
+export type NewOhlcvCandle = typeof ohlcvCandles.$inferInsert;

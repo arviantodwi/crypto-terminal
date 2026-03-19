@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { ohlcCandles, type NewOhlcCandle } from '../../db/schema.js';
+import { ohlcvCandles, type NewOhlcvCandle } from '../../db/schema.js';
 
 interface FetchOhlcBody {
   instrument: string;
@@ -38,7 +38,7 @@ function getClosestAggregateTs(intervalSeconds: number): number {
   return Math.floor(nowSeconds / intervalSeconds) * intervalSeconds;
 }
 
-function normalize(record: CoindeskRecord, instrument: string, timeframe: string): NewOhlcCandle {
+function normalize(record: CoindeskRecord, instrument: string, timeframe: string): NewOhlcvCandle {
   return {
     open_time: record.TIMESTAMP,
     open: record.OPEN,
@@ -55,15 +55,15 @@ function normalize(record: CoindeskRecord, instrument: string, timeframe: string
 
 async function upsertCandles(
   db: FastifyRequest['server']['db'],
-  candles: NewOhlcCandle[],
+  candles: NewOhlcvCandle[],
 ): Promise<{ inserted: number; skipped: number }> {
   if (candles.length === 0) return { inserted: 0, skipped: 0 };
 
   const result = await db
-    .insert(ohlcCandles)
+    .insert(ohlcvCandles)
     .values(candles)
     .onConflictDoNothing()
-    .returning({ instrument: ohlcCandles.instrument });
+    .returning({ instrument: ohlcvCandles.instrument });
 
   const inserted = result.length;
   const skipped = candles.length - inserted;
