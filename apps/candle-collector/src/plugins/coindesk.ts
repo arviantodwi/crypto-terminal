@@ -47,7 +47,7 @@ async function coindeskPlugin(fastify: FastifyInstance): Promise<void> {
     url.searchParams.set('market', 'binance');
     url.searchParams.set('instrument', instrument);
     url.searchParams.set('groups', 'OHLC,Trade,Volume');
-    url.searchParams.set('limit', '1000');
+    url.searchParams.set('limit', String(Math.floor(2000 / aggregate)));
     url.searchParams.set('fill', 'true');
     url.searchParams.set('apply_mapping', 'true');
     url.searchParams.set('aggregate', String(aggregate));
