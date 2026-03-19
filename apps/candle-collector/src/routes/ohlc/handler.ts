@@ -4,6 +4,7 @@ import type pg from 'pg';
 interface FetchOhlcBody {
   instrument: string;
   to_ts?: number;
+  aggregate?: number;
   pages?: number;
 }
 
@@ -15,7 +16,9 @@ interface NormalizedCandle {
   close: number;
   volume: number;
   quote_volume: number;
+  num_trades: number;
   instrument: string;
+  timeframe: string;
 }
 
 interface CoindeskRecord {
@@ -26,6 +29,7 @@ interface CoindeskRecord {
   CLOSE: number;
   VOLUME: number;
   QUOTE_VOLUME: number;
+  TOTAL_TRADES: number;
 }
 
 interface AppError extends Error {
@@ -35,14 +39,19 @@ interface AppError extends Error {
 // In-memory lock: tracks instruments currently being fetched
 const activeFetches = new Set<string>();
 
-const INTERVAL_SECONDS = 300; // 5 minutes
-
-function getClosest5MinTs(): number {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  return Math.floor(nowSeconds / INTERVAL_SECONDS) * INTERVAL_SECONDS;
+function aggregateToTimeframe(aggregate: number): string {
+  if (aggregate >= 60 && aggregate % 60 === 0) {
+    return `${aggregate / 60}h`;
+  }
+  return `${aggregate}m`;
 }
 
-function normalize(record: CoindeskRecord, instrument: string): NormalizedCandle {
+function getClosestAggregateTs(intervalSeconds: number): number {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  return Math.floor(nowSeconds / intervalSeconds) * intervalSeconds;
+}
+
+function normalize(record: CoindeskRecord, instrument: string, timeframe: string): NormalizedCandle {
   return {
     open_time: record.TIMESTAMP,
     open: record.OPEN,
@@ -51,7 +60,9 @@ function normalize(record: CoindeskRecord, instrument: string): NormalizedCandle
     close: record.CLOSE,
     volume: record.VOLUME,
     quote_volume: record.QUOTE_VOLUME,
+    num_trades: record.TOTAL_TRADES,
     instrument,
+    timeframe,
   };
 }
 
@@ -63,15 +74,26 @@ async function upsertCandles(
 
   const values: unknown[] = [];
   const placeholders = candles.map((c, i) => {
-    const base = i * 8;
-    values.push(c.open_time, c.instrument, c.open, c.high, c.low, c.close, c.volume, c.quote_volume);
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8})`;
+    const base = i * 10;
+    values.push(
+      c.instrument,
+      c.open_time,
+      c.timeframe,
+      c.open,
+      c.high,
+      c.low,
+      c.close,
+      c.volume,
+      c.quote_volume,
+      c.num_trades,
+    );
+    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10})`;
   });
 
   const sql = `
-    INSERT INTO ohlc_candles (open_time, instrument, open, high, low, close, volume, quote_volume)
+    INSERT INTO ohlc_candles (instrument, open_time, timeframe, open, high, low, close, volume, quote_volume, num_trades)
     VALUES ${placeholders.join(', ')}
-    ON CONFLICT (open_time, instrument) DO NOTHING
+    ON CONFLICT (instrument, open_time, timeframe) DO NOTHING
   `;
 
   const result = await pool.query(sql, values);
@@ -84,7 +106,9 @@ export async function fetchOhlcHandler(
   request: FastifyRequest<{ Body: FetchOhlcBody }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const { instrument, to_ts, pages = 10 } = request.body;
+  const { instrument, to_ts, aggregate = 5, pages = 10 } = request.body;
+  const intervalSeconds = aggregate * 60;
+  const timeframe = aggregateToTimeframe(aggregate);
 
   // 409 — in-progress lock
   if (activeFetches.has(instrument)) {
@@ -98,7 +122,7 @@ export async function fetchOhlcHandler(
   activeFetches.add(instrument);
   const startTime = Date.now();
 
-  let currentToTs = to_ts ?? getClosest5MinTs();
+  let currentToTs = to_ts ?? getClosestAggregateTs(intervalSeconds);
   let pagesFetched = 0;
   let totalRecords = 0;
   let totalInserted = 0;
@@ -110,7 +134,7 @@ export async function fetchOhlcHandler(
     for (let page = 1; page <= pages; page++) {
       let rawData: CoindeskRecord[];
       try {
-        rawData = await request.server.coindesk.fetchPage({ instrument, toTs: currentToTs });
+        rawData = await request.server.coindesk.fetchPage({ instrument, toTs: currentToTs, aggregate });
       } catch (err) {
         const appErr = err as AppError;
         request.log.error({ err, instrument, page }, '[ohlc] CoinDesk fetch failed');
@@ -127,7 +151,7 @@ export async function fetchOhlcHandler(
         break;
       }
 
-      const candles = rawData.map((r) => normalize(r, instrument));
+      const candles = rawData.map((r) => normalize(r, instrument, timeframe));
 
       let insertResult: { inserted: number; skipped: number };
       try {
@@ -153,7 +177,7 @@ export async function fetchOhlcHandler(
       totalSkipped += insertResult.skipped;
       pagesFetched = page;
 
-      const nextToTs = pageEarliest - INTERVAL_SECONDS;
+      const nextToTs = pageEarliest - intervalSeconds;
 
       request.log.info(
         {

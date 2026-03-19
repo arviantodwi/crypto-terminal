@@ -41,6 +41,7 @@ Runs the paginated CoinDesk fetch and upserts candles into PostgreSQL.
 {
   "instrument": "BTC-USDT-VANILLA-PERPETUAL",
   "to_ts": 1773926478,
+  "aggregate": 5,
   "pages": 10
 }
 ```
@@ -48,7 +49,8 @@ Runs the paginated CoinDesk fetch and upserts candles into PostgreSQL.
 | Field        | Type    | Required | Description                                                                                         |
 |--------------|---------|----------|-----------------------------------------------------------------------------------------------------|
 | `instrument` | string  | ✅        | CoinDesk instrument identifier                                                                      |
-| `to_ts`      | integer | ❌        | Unix timestamp — start paginating backwards from here. Defaults to the closest 5-minute boundary before now |
+| `to_ts`      | integer | ❌        | Unix timestamp — start paginating backwards from here. Defaults to the closest boundary before now |
+| `aggregate`  | integer | ❌        | Candle width in minutes (e.g. `5` → 5m, `15` → 15m, `60` → 1h). Defaults to `5`                  |
 | `pages`      | integer | ❌        | Pages of 1,000 candles to fetch. Defaults to `10` (≈10,000). Max `20`                              |
 
 **Successful response:**
@@ -81,15 +83,17 @@ The service expects an `ohlc_candles` table:
 
 ```sql
 CREATE TABLE IF NOT EXISTS ohlc_candles (
-  open_time   BIGINT        NOT NULL,
-  instrument  VARCHAR(100)  NOT NULL,
-  open        NUMERIC       NOT NULL,
-  high        NUMERIC       NOT NULL,
-  low         NUMERIC       NOT NULL,
-  close       NUMERIC       NOT NULL,
-  volume      NUMERIC       NOT NULL,
-  quote_volume NUMERIC      NOT NULL,
-  PRIMARY KEY (open_time, instrument)
+  instrument   VARCHAR(100)  NOT NULL,
+  open_time    BIGINT        NOT NULL,
+  timeframe    VARCHAR(10)   NOT NULL,
+  open         FLOAT8        NOT NULL,
+  high         FLOAT8        NOT NULL,
+  low          FLOAT8        NOT NULL,
+  close        FLOAT8        NOT NULL,
+  volume       FLOAT8        NOT NULL,
+  quote_volume FLOAT8        NOT NULL,
+  num_trades   BIGINT        NOT NULL,
+  PRIMARY KEY (instrument, open_time, timeframe)
 );
 ```
 

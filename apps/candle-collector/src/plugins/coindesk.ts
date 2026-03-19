@@ -10,6 +10,7 @@ interface CoindeskRecord {
   CLOSE: number;
   VOLUME: number;
   QUOTE_VOLUME: number;
+  TOTAL_TRADES: number;
 }
 
 interface CoindeskResponse {
@@ -25,7 +26,7 @@ interface AppError extends Error {
 declare module 'fastify' {
   interface FastifyInstance {
     coindesk: {
-      fetchPage: (options: { instrument: string; toTs: number }) => Promise<CoindeskRecord[]>;
+      fetchPage: (options: { instrument: string; toTs: number; aggregate: number }) => Promise<CoindeskRecord[]>;
     };
   }
 }
@@ -36,18 +37,20 @@ async function coindeskPlugin(fastify: FastifyInstance): Promise<void> {
   async function fetchPage({
     instrument,
     toTs,
+    aggregate,
   }: {
     instrument: string;
     toTs: number;
+    aggregate: number;
   }): Promise<CoindeskRecord[]> {
     const url = new URL('/spot/v1/historical/minutes', baseUrl);
     url.searchParams.set('market', 'binance');
     url.searchParams.set('instrument', instrument);
-    url.searchParams.set('groups', 'OHLC,VOLUME');
+    url.searchParams.set('groups', 'OHLC,Trade,Volume');
     url.searchParams.set('limit', '1000');
     url.searchParams.set('fill', 'true');
     url.searchParams.set('apply_mapping', 'true');
-    url.searchParams.set('aggregate', '5');
+    url.searchParams.set('aggregate', String(aggregate));
     url.searchParams.set('to_ts', String(toTs));
 
     const response = await fetch(url.toString(), {

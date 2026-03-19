@@ -6,6 +6,7 @@ export const fetchOhlcSchema = {
     properties: {
       instrument: { type: 'string', minLength: 1 },
       to_ts: { type: 'integer' },
+      aggregate: { type: 'integer', minimum: 1, default: 5 },
       pages: { type: 'integer', minimum: 1, maximum: 20, default: 10 },
     },
   },
