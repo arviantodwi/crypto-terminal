@@ -13,6 +13,11 @@ export const ohlcvCandles = pgTable(
     volume: doublePrecision('volume').notNull(),
     quote_volume: doublePrecision('quote_volume').notNull(),
     num_trades: bigint('num_trades', { mode: 'number' }).notNull(),
+
+    // derived — computed at ingestion time
+    pct_change: doublePrecision('pct_change').notNull(),
+    candle_range: doublePrecision('candle_range').notNull(),
+    body_ratio: doublePrecision('body_ratio').notNull(),
   },
   (table) => [primaryKey({ columns: [table.instrument, table.open_time, table.timeframe] })],
 );

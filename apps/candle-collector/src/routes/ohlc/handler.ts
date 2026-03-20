@@ -39,17 +39,21 @@ function getClosestAggregateTs(intervalSeconds: number): number {
 }
 
 function normalize(record: CoindeskRecord, instrument: string, timeframe: string): NewOhlcvCandle {
+  const { OPEN: open, HIGH: high, LOW: low, CLOSE: close } = record;
   return {
     open_time: record.TIMESTAMP,
-    open: record.OPEN,
-    high: record.HIGH,
-    low: record.LOW,
-    close: record.CLOSE,
+    open,
+    high,
+    low,
+    close,
     volume: record.VOLUME,
     quote_volume: record.QUOTE_VOLUME,
     num_trades: record.TOTAL_TRADES,
     instrument,
     timeframe,
+    pct_change: ((close - open) / open) * 100,
+    candle_range: ((high - low) / open) * 100,
+    body_ratio: high === low ? 1.0 : Math.abs(close - open) / (high - low),
   };
 }
 

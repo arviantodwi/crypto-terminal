@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1742457600000,
+      "tag": "0000_create_ohlcv_candles",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1742461200000,
+      "tag": "0001_add_derived_candle_metrics",
+      "breakpoints": true
+    }
+  ]
+}
