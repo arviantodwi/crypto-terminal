@@ -81,7 +81,13 @@ async def _handle_message(raw_text: str, cm: ConnectionManager) -> None:
         logger.warning("Failed to parse kline message: %s", exc)
         return
 
-    await cm.broadcast(kline_message_to_dict(msg))
+    candle_dict = kline_message_to_dict(msg)
+    if msg.kline.is_closed:
+        cm.update_closed_candle(candle_dict)
+        await cm.broadcast({**candle_dict, "type": "candle_closed"})
+    else:
+        cm.update_current_candle(candle_dict)
+        await cm.broadcast({**candle_dict, "type": "tick"})
 
 
 async def run_binance_stream(pair: str, cm: ConnectionManager) -> None:

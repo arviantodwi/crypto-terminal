@@ -18,6 +18,11 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self._clients.add(websocket)
+        await websocket.send_json({
+            "type": "snapshot",
+            "closed_candles": self.closed_candles,
+            "current_candle": self.current_candle,
+        })
 
     async def disconnect(self, websocket: WebSocket) -> None:
         self._clients.discard(websocket)
