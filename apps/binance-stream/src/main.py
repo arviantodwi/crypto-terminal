@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel
 
+from .config import settings
 from .connection_manager import ConnectionManager
 from .stream import fetch_initial_candles, run_binance_stream
 
@@ -23,7 +24,7 @@ class HealthResponse(BaseModel):
     active_streams: list[str]
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=settings.log_level.upper())
 _ws_logger = logging.getLogger("websockets")
 _ws_logger.setLevel(logging.WARNING)
 _ws_logger.propagate = False
@@ -39,15 +40,18 @@ TRACKED_PAIRS = ["btcusdt"]
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     for pair in TRACKED_PAIRS:
-        _managers[pair] = ConnectionManager()
-        initial_candles = await fetch_initial_candles(pair)
-        for candle in initial_candles:
-            _managers[pair].update_closed_candle(candle)
-        logger.info("Seeded %d initial candles for %s", len(initial_candles), pair)
-        _stream_tasks[pair] = asyncio.create_task(
-            run_binance_stream(pair, _managers[pair]),
-            name=f"binance-kline-{pair}",
-        )
+        try:
+            _managers[pair] = ConnectionManager()
+            initial_candles = await fetch_initial_candles(pair)
+            for candle in initial_candles:
+                _managers[pair].update_closed_candle(candle)
+            logger.info("Seeded %d initial candles for %s", len(initial_candles), pair)
+            _stream_tasks[pair] = asyncio.create_task(
+                run_binance_stream(pair, _managers[pair]),
+                name=f"binance-kline-{pair}",
+            )
+        except Exception:
+            logger.exception("Failed to initialize stream for %s, skipping", pair)
     logger.info("All stream tasks started")
 
     yield
@@ -65,6 +69,7 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
 
 def _custom_openapi() -> dict:
     if app.openapi_schema:
@@ -93,7 +98,7 @@ def _custom_openapi() -> dict:
                     "in": "path",
                     "required": True,
                     "schema": {"type": "string", "example": "btcusdt"},
-                    "description": "Lowercase pair symbol, e.g. `btcusdt`, `ethusdt`.",
+                    "description": "Lowercase pair symbol tracked by this service, e.g. `btcusdt`.",
                 }
             ],
             "responses": {
@@ -109,7 +114,7 @@ app.openapi = _custom_openapi  # type: ignore[method-assign]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -130,7 +135,7 @@ async def kline_endpoint(websocket: WebSocket, pair: str):
     logger.info("Client connected to %s/kline (%d total)", pair, cm.client_count)
     try:
         while True:
-            await websocket.receive_text()
+            await websocket.receive()
     except WebSocketDisconnect:
         logger.info("Client disconnected from %s/kline", pair)
     finally:
@@ -144,8 +149,8 @@ async def health():
     return {
         "status": "ok",
         "service": "binance-stream",
-        "version": "0.1.0",
-        "active_streams": list(_stream_tasks.keys()),
+        "version": app.version,
+        "active_streams": [pair for pair, task in _stream_tasks.items() if not task.done()],
     }
 
 

@@ -33,7 +33,7 @@ class ConnectionManager:
             try:
                 await client.send_json(payload)
             except Exception:
-                logger.warning("Failed to send to client, removing")
+                logger.warning("Failed to send to client, removing", exc_info=True)
                 failed.append(client)
         for client in failed:
             self._clients.discard(client)
@@ -45,8 +45,11 @@ class ConnectionManager:
     def update_current_candle(self, candle: dict) -> None:
         self.current_candle = candle
 
+    def mark_current_candle_stale(self) -> None:
+        """Mark the current in-progress candle as stale after a stream reconnect."""
+        if self.current_candle is not None:
+            self.current_candle = {**self.current_candle, "stale": True}
+
     @property
     def client_count(self) -> int:
         return len(self._clients)
-
-
