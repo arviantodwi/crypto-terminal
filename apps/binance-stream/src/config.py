@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     port: int = 3001
     binance_api_key: str = ""
     binance_api_secret: str = ""
-    database_url: str = ""
 
 
 settings = Settings()
