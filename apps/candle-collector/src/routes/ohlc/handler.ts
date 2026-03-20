@@ -51,8 +51,8 @@ function normalize(record: CoindeskRecord, instrument: string, timeframe: string
     num_trades: record.TOTAL_TRADES,
     instrument,
     timeframe,
-    pct_change: ((close - open) / open) * 100,
-    candle_range: ((high - low) / open) * 100,
+    pct_change: open !== 0 ? ((close - open) / open) * 100 : 0,
+    candle_range: open !== 0 ? ((high - low) / open) * 100 : 0,
     body_ratio: high === low ? 1.0 : Math.abs(close - open) / (high - low),
   };
 }
