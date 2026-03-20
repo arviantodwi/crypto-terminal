@@ -33,11 +33,21 @@ logger = logging.getLogger(__name__)
 _managers: dict[str, ConnectionManager] = {}
 _stream_tasks: dict[str, asyncio.Task] = {}
 
+TRACKED_PAIRS = ["btcusdt"]
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    for pair in TRACKED_PAIRS:
+        _managers[pair] = ConnectionManager()
+        _stream_tasks[pair] = asyncio.create_task(
+            run_binance_stream(pair, _managers[pair]),
+            name=f"binance-kline-{pair}",
+        )
+    logger.info("All stream tasks started")
+
     yield
-    # Cancel all active stream tasks on shutdown.
+
     for task in list(_stream_tasks.values()):
         task.cancel()
     if _stream_tasks:
@@ -69,8 +79,8 @@ def _custom_openapi() -> dict:
                 "Open a WebSocket connection to receive real-time 5-minute continuous "
                 "kline updates for a USDS Futures perpetual pair (e.g. `btcusdt`). "
                 "Each message is a JSON `KlineMessage` object. "
-                "The stream starts on first client connect and stops "
-                "when the last client disconnects."
+                "The stream runs independently of client connections — "
+                "it starts at app startup and stops only at app shutdown."
             ),
             "operationId": "ws_kline",
             "parameters": [
@@ -106,17 +116,11 @@ app.add_middleware(
 async def kline_endpoint(websocket: WebSocket, pair: str):
     """Stream continuous kline data for a given pair (e.g. btcusdt)."""
     pair = pair.lower()
+    cm = _managers.get(pair)
 
-    if pair not in _managers:
-        _managers[pair] = ConnectionManager()
-
-    cm = _managers[pair]
-
-    if pair not in _stream_tasks or _stream_tasks[pair].done():
-        _stream_tasks[pair] = asyncio.create_task(
-            run_binance_stream(pair, cm),
-            name=f"binance-kline-{pair}",
-        )
+    if cm is None:
+        await websocket.close(code=1008)
+        return
 
     await cm.connect(websocket)
     logger.info("Client connected to %s/kline (%d total)", pair, cm.client_count)
@@ -127,9 +131,7 @@ async def kline_endpoint(websocket: WebSocket, pair: str):
         logger.info("Client disconnected from %s/kline", pair)
     finally:
         await cm.disconnect(websocket)
-        if cm.client_count == 0:
-            _stream_tasks.pop(pair).cancel()
-            _managers.pop(pair)
+        # stream keeps running regardless of client count
 
 
 @app.get("/health", response_model=HealthResponse)
