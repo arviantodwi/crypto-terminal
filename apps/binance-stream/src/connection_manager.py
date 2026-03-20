@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 class ConnectionManager:
     def __init__(self) -> None:
         self._clients: set[WebSocket] = set()
+        self.closed_candles: list[dict] = []
+        self.current_candle: dict | None = None
 
     async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
@@ -30,6 +32,13 @@ class ConnectionManager:
                 failed.append(client)
         for client in failed:
             self._clients.discard(client)
+
+    def update_closed_candle(self, candle: dict) -> None:
+        self.closed_candles.append(candle)
+        self.closed_candles = self.closed_candles[-3:]
+
+    def update_current_candle(self, candle: dict) -> None:
+        self.current_candle = candle
 
     @property
     def client_count(self) -> int:
