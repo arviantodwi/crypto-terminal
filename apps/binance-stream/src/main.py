@@ -13,7 +13,7 @@ from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel
 
 from .connection_manager import ConnectionManager
-from .stream import run_binance_stream
+from .stream import fetch_initial_candles, run_binance_stream
 
 
 class HealthResponse(BaseModel):
@@ -40,6 +40,10 @@ TRACKED_PAIRS = ["btcusdt"]
 async def lifespan(_: FastAPI):
     for pair in TRACKED_PAIRS:
         _managers[pair] = ConnectionManager()
+        initial_candles = await fetch_initial_candles(pair)
+        for candle in initial_candles:
+            _managers[pair].update_closed_candle(candle)
+        logger.info("Seeded %d initial candles for %s", len(initial_candles), pair)
         _stream_tasks[pair] = asyncio.create_task(
             run_binance_stream(pair, _managers[pair]),
             name=f"binance-kline-{pair}",
