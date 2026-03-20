@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 BINANCE_FUTURES_WS_BASE = "wss://fstream.binance.com/ws"
 BINANCE_FUTURES_REST_BASE = "https://fapi.binance.com"
 
+# Minimum number of fields required in a REST kline entry.
+_REST_CANDLE_MIN_FIELDS = 9
+
 
 def make_stream_url(pair: str) -> str:
     return f"{BINANCE_FUTURES_WS_BASE}/{pair.lower()}_perpetual@continuousKline_5m"
@@ -29,6 +32,10 @@ def make_stream_url(pair: str) -> str:
 
 def _rest_candle_to_dict(candle: list, pair: str) -> dict:
     """Convert a Binance REST continuousKlines array entry to the standard kline dict format."""
+    if len(candle) < _REST_CANDLE_MIN_FIELDS:
+        raise ValueError(
+            f"Candle entry has {len(candle)} fields, expected at least {_REST_CANDLE_MIN_FIELDS}"
+        )
     return {
         "type": "kline",
         "event_time": candle[6],  # use close_time as event_time for historical candles
@@ -58,7 +65,7 @@ async def fetch_initial_candles(pair: str) -> list[dict]:
         "interval": "5m",
         "limit": 4,  # fetch 4, discard the currently forming one
     }
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         response = await client.get(url, params=params)
         response.raise_for_status()
         candles = response.json()
@@ -93,7 +100,13 @@ async def _handle_message(raw_text: str, cm: ConnectionManager) -> None:
 async def run_binance_stream(pair: str, cm: ConnectionManager) -> None:
     url = make_stream_url(pair)
     logger.info("Starting Binance futures kline stream: %s", url)
-    async for websocket in connect(url):
+    first = True
+    # delay_min/delay_max configure the exponential backoff between reconnect attempts.
+    async for websocket in connect(url, delay_min=1, delay_max=60):
+        if not first:
+            logger.warning("Binance WebSocket reconnected for %s, marking current candle stale", pair)
+            cm.mark_current_candle_stale()
+        first = False
         try:
             async for message in websocket:
                 await _handle_message(message, cm)
@@ -103,3 +116,6 @@ async def run_binance_stream(pair: str, cm: ConnectionManager) -> None:
         except asyncio.CancelledError:
             logger.info("Binance stream task cancelled for %s", pair)
             raise
+        except Exception:
+            logger.exception("Unexpected error in stream for %s, reconnecting...", pair)
+            continue
