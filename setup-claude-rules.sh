@@ -1,52 +1,29 @@
-blob
-mark :1
-data <<ENDDOC_1
-# CLAUDE.md
+#!/usr/bin/env bash
+# setup-claude-rules.sh
+#
+# Creates the .claude/rules/ directory structure with all rule files.
+# Run once from the repository root, then commit and push the result.
+#
+# Usage:
+#   bash setup-claude-rules.sh
+#   git add .claude/rules/
+#   git commit -m "feat: add claude rules collection"
+#   git push
 
-Guidance for Claude Code when working with this repository.
+set -euo pipefail
 
-## Overview
+RULES_DIR=".claude/rules"
 
-**pnpm workspace monorepo** with three apps and a shared types package.
+mkdir -p \
+  "$RULES_DIR/web" \
+  "$RULES_DIR/binance-stream" \
+  "$RULES_DIR/candle-collector"
 
-| App | Path | Port |
-|-----|------|------|
-| Web frontend | `apps/web/` | 3000 |
-| Binance stream | `apps/binance-stream/` | 3001 |
-| Candle collector | `apps/candle-collector/` | 3002 |
+# ---------------------------------------------------------------------------
+# Shared rules
+# ---------------------------------------------------------------------------
 
-Shared types: `packages/types/` (`@crypto-terminal/types`)
-
-## Rules
-
-Detailed guidelines live in `.claude/rules/`, organized by topic. Files use `paths` frontmatter so Claude loads the right rules automatically.
-
-### Shared
-- [`monorepo-structure.md`](.claude/rules/monorepo-structure.md) — repo layout, root-level files
-- [`commands.md`](.claude/rules/commands.md) — dev/build/lint commands for all apps
-- [`naming-conventions.md`](.claude/rules/naming-conventions.md) — file naming (`apps/web/`, `packages/types/`)
-
-### apps/web
-- [`web/architecture.md`](.claude/rules/web/architecture.md) — folder structure, TanStack Query, React Compiler
-- [`web/styling.md`](.claude/rules/web/styling.md) — Tailwind v4, design tokens, fonts
-- [`web/icons.md`](.claude/rules/web/icons.md) — icon system and glyph patterns
-- [`web/figma.md`](.claude/rules/web/figma.md) — Figma-to-code conventions
-- [`web/linting.md`](.claude/rules/web/linting.md) — Biome config
-
-### apps/binance-stream
-- [`binance-stream/architecture.md`](.claude/rules/binance-stream/architecture.md) — FastAPI structure and endpoints
-- [`binance-stream/environment.md`](.claude/rules/binance-stream/environment.md) — Python/Poetry setup
-- [`binance-stream/linting.md`](.claude/rules/binance-stream/linting.md) — Ruff config
-
-### apps/candle-collector
-- [`candle-collector/architecture.md`](.claude/rules/candle-collector/architecture.md) — Fastify service structure and endpoints
-- [`candle-collector/database.md`](.claude/rules/candle-collector/database.md) — Drizzle ORM and migrations
-- [`candle-collector/environment.md`](.claude/rules/candle-collector/environment.md) — env variables and setup
-ENDDOC_1
-
-blob
-mark :2
-data <<ENDDOC_2
+cat > "$RULES_DIR/monorepo-structure.md" << 'ENDFILE'
 ---
 paths:
   - "**/*"
@@ -71,11 +48,9 @@ This is a **pnpm workspace monorepo**.
 ## Root-Level Files
 
 Keep at root (do not move into apps): `.editorconfig`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `biome.jsonc`, `.claude/`, `.opencode/`, `.vscode/`, `design/`
-ENDDOC_2
+ENDFILE
 
-blob
-mark :3
-data <<ENDDOC_3
+cat > "$RULES_DIR/commands.md" << 'ENDFILE'
 ---
 paths:
   - "**/*"
@@ -123,11 +98,9 @@ pnpm db:migrate    # Apply pending migrations (requires DATABASE_URL in .env)
 ```
 
 No test runner is configured for any app.
-ENDDOC_3
+ENDFILE
 
-blob
-mark :4
-data <<ENDDOC_4
+cat > "$RULES_DIR/naming-conventions.md" << 'ENDFILE'
 ---
 paths:
   - "apps/web/**"
@@ -143,11 +116,13 @@ Applies to `apps/web/` and `packages/types/` only.
 | React components (`*.tsx`) | PascalCase | `MyComponent.tsx`, `PriceChart.tsx` |
 | Hooks (`use*.ts` / `use*.tsx`) | camelCase with `use` prefix | `useMarketData.ts`, `usePriceHistory.ts` |
 | All other files (utils, lib, types, config) | kebab-case | `query-client.ts`, `format-currency.ts` |
-ENDDOC_4
+ENDFILE
 
-blob
-mark :5
-data <<ENDDOC_5
+# ---------------------------------------------------------------------------
+# apps/web rules
+# ---------------------------------------------------------------------------
+
+cat > "$RULES_DIR/web/architecture.md" << 'ENDFILE'
 ---
 paths:
   - "apps/web/**"
@@ -178,11 +153,9 @@ paths:
 ## React Compiler
 
 React Compiler is enabled (`reactCompiler: true` in `next.config.ts`). Avoid manual `useMemo`/`useCallback` unless profiling shows a need.
-ENDDOC_5
+ENDFILE
 
-blob
-mark :6
-data <<ENDDOC_6
+cat > "$RULES_DIR/web/styling.md" << 'ENDFILE'
 ---
 paths:
   - "apps/web/**"
@@ -204,11 +177,9 @@ paths:
 ## Tailwind Variants
 
 Always use `tailwind-variants` (`tv`) for component styling. Do not use plain `clsx`/`cx` for conditional classes in components.
-ENDDOC_6
+ENDFILE
 
-blob
-mark :7
-data <<ENDDOC_7
+cat > "$RULES_DIR/web/icons.md" << 'ENDFILE'
 ---
 paths:
   - "apps/web/**"
@@ -241,11 +212,9 @@ All SVGs must have `aria-hidden="true"` (icons are decorative; surrounding conte
 <Icon glyph={Settings} size={20} />
 <Icon glyph={SettingsFilled} className="text-yellow-400" />
 ```
-ENDDOC_7
+ENDFILE
 
-blob
-mark :8
-data <<ENDDOC_8
+cat > "$RULES_DIR/web/figma.md" << 'ENDFILE'
 ---
 paths:
   - "apps/web/**"
@@ -265,11 +234,9 @@ paths:
 - Always use Tailwind Variants (`tv`) when converting designs to UI components.
 - Ensure the rendered UI appearance matches the Figma design as closely as possible.
 - Use design tokens defined in `src/app/globals.css` for colors — do not use raw Tailwind color utilities unless they match a design token.
-ENDDOC_8
+ENDFILE
 
-blob
-mark :9
-data <<ENDDOC_9
+cat > "$RULES_DIR/web/linting.md" << 'ENDFILE'
 ---
 paths:
   - "apps/web/**"
@@ -296,11 +263,13 @@ Config lives in `biome.jsonc` at the repository root.
 pnpm lint        # Check
 pnpm lint:fix    # Auto-fix (--unsafe flag enabled)
 ```
-ENDDOC_9
+ENDFILE
 
-blob
-mark :10
-data <<ENDDOC_10
+# ---------------------------------------------------------------------------
+# apps/binance-stream rules
+# ---------------------------------------------------------------------------
+
+cat > "$RULES_DIR/binance-stream/architecture.md" << 'ENDFILE'
 ---
 paths:
   - "apps/binance-stream/**"
@@ -332,11 +301,9 @@ Stream real-time market data from Binance USDS Futures WebSocket and expose it t
 | `ws://localhost:3001/ws` | WebSocket stream for the frontend |
 | `GET /health` | Health check |
 | `GET /docs` | Auto-generated FastAPI docs |
-ENDDOC_10
+ENDFILE
 
-blob
-mark :11
-data <<ENDDOC_11
+cat > "$RULES_DIR/binance-stream/environment.md" << 'ENDFILE'
 ---
 paths:
   - "apps/binance-stream/**"
@@ -359,11 +326,9 @@ poetry install   # Install all dependencies
 ## Environment Variables
 
 Copy `.env.example` to `.env` and fill in required values (Binance API keys, database config, etc.).
-ENDDOC_11
+ENDFILE
 
-blob
-mark :12
-data <<ENDDOC_12
+cat > "$RULES_DIR/binance-stream/linting.md" << 'ENDFILE'
 ---
 paths:
   - "apps/binance-stream/**"
@@ -385,11 +350,13 @@ Config lives in `apps/binance-stream/pyproject.toml`.
 poetry run ruff check .    # Lint
 poetry run ruff format .   # Format
 ```
-ENDDOC_12
+ENDFILE
 
-blob
-mark :13
-data <<ENDDOC_13
+# ---------------------------------------------------------------------------
+# apps/candle-collector rules
+# ---------------------------------------------------------------------------
+
+cat > "$RULES_DIR/candle-collector/architecture.md" << 'ENDFILE'
 ---
 paths:
   - "apps/candle-collector/**"
@@ -439,11 +406,9 @@ Standalone service that fetches historical OHLC candle data from the CoinDesk AP
 | `409` | Fetch already in progress for this instrument |
 | `502` | CoinDesk returned an error |
 | `500` | Database write failed |
-ENDDOC_13
+ENDFILE
 
-blob
-mark :14
-data <<ENDDOC_14
+cat > "$RULES_DIR/candle-collector/database.md" << 'ENDFILE'
 ---
 paths:
   - "apps/candle-collector/**"
@@ -463,11 +428,9 @@ pnpm db:migrate    # Apply pending migrations (requires DATABASE_URL in .env)
 ```
 
 Always run `pnpm db:generate` after changing `src/db/schema.ts`, and commit the generated migration file alongside the schema change.
-ENDDOC_14
+ENDFILE
 
-blob
-mark :15
-data <<ENDDOC_15
+cat > "$RULES_DIR/candle-collector/environment.md" << 'ENDFILE'
 ---
 paths:
   - "apps/candle-collector/**"
@@ -495,38 +458,11 @@ pnpm db:migrate
 | `DATABASE_URL` | Yes | — | PostgreSQL connection string |
 | `PORT` | No | `3002` | Port the service listens on |
 | `LOG_LEVEL` | No | `info` | Pino log level |
-ENDDOC_15
+ENDFILE
 
-commit refs/heads/claude/issue-22-20260320-1559
-mark :100
-author Arvianto D. Wicaksono <arviantodwi@users.noreply.github.com> 1773878400 +0000
-committer Claude Sonnet 4.6 <noreply@anthropic.com> 1773878400 +0000
-data <<ENDMSG
-feat: restructure CLAUDE.md into topic-based rules collection
-
-Splits the monolithic CLAUDE.md into a concise entry point and 14
-topic-specific rule files under .claude/rules/, organized by app.
-Each rule file uses paths frontmatter for automatic loading.
-
-Adds documentation for apps/candle-collector (previously undocumented).
-
-Co-authored-by: Arvianto D. Wicaksono <arviantodwi@users.noreply.github.com>
-Co-authored-by: Claude Sonnet 4.6 <noreply@anthropic.com>
-ENDMSG
-from refs/heads/claude/issue-22-20260320-1559
-M 100644 :1 CLAUDE.md
-M 100644 :2 .claude/rules/monorepo-structure.md
-M 100644 :3 .claude/rules/commands.md
-M 100644 :4 .claude/rules/naming-conventions.md
-M 100644 :5 .claude/rules/web/architecture.md
-M 100644 :6 .claude/rules/web/styling.md
-M 100644 :7 .claude/rules/web/icons.md
-M 100644 :8 .claude/rules/web/figma.md
-M 100644 :9 .claude/rules/web/linting.md
-M 100644 :10 .claude/rules/binance-stream/architecture.md
-M 100644 :11 .claude/rules/binance-stream/environment.md
-M 100644 :12 .claude/rules/binance-stream/linting.md
-M 100644 :13 .claude/rules/candle-collector/architecture.md
-M 100644 :14 .claude/rules/candle-collector/database.md
-M 100644 :15 .claude/rules/candle-collector/environment.md
-
+echo "Done! All rule files created in $RULES_DIR/"
+echo ""
+echo "Next steps:"
+echo "  git add .claude/rules/"
+echo "  git commit -m 'feat: add claude rules collection'"
+echo "  git push"
