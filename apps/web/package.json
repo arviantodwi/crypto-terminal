@@ -15,7 +15,8 @@
     "tailwind-merge": "^3",
     "tailwind-variants": "^3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3"
   },
   "name": "web",
   "private": true,
@@ -24,7 +25,8 @@
     "dev": "next dev",
     "lint": "biome check",
     "lint:fix": "biome check --write --unsafe",
-    "start": "next start"
+    "start": "next start",
+    "test": "vitest run"
   },
   "version": "0.1.0"
 }
