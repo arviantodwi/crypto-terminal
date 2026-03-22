@@ -8,6 +8,7 @@ Real-time WebSocket streamer for Binance USDS Futures market data, built with Fa
 - Exposes a WebSocket endpoint for the Next.js frontend
 - Seeds the last 3 closed candles from the REST API on startup
 - Broadcasts real-time tick and candle-close events to all connected clients
+- Publishes closed candle payloads to a Redis channel for downstream consumers (e.g. Pattern Analyzer)
 - Auto-reconnects to Binance with exponential backoff (1 s – 60 s)
 - FastAPI server with automatic OpenAPI documentation
 
@@ -15,6 +16,7 @@ Real-time WebSocket streamer for Binance USDS Futures market data, built with Fa
 
 - Python 3.12 (managed via pyenv)
 - Poetry for dependency management
+- Redis 6+ (for the kline channel publisher)
 
 ## Setup
 
@@ -60,6 +62,9 @@ All variables are optional — the defaults work for local development without B
 | `PORT` | `3001` | Server port |
 | `LOG_LEVEL` | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | JSON array of allowed CORS origins |
+| `REDIS_HOST` | `localhost` | Redis server hostname |
+| `REDIS_PORT` | `6379` | Redis server port |
+| `REDIS_KLINE_CHANNEL` | `kline:closed` | Redis Pub/Sub channel for closed candle events |
 
 ## Endpoints
 
@@ -138,9 +143,41 @@ Binance USDS Futures
                ├── closed_candles  (last 3)
                └── current_candle
                           ↓
-                  broadcast to all connected
-                  frontend WebSocket clients
+               ┌──────────┴──────────┐
+               ↓                     ↓
+      broadcast to all          publish to Redis
+      connected frontend        kline:closed channel
+      WebSocket clients         (candle_closed events only)
 ```
+
+### Redis Channel
+
+On every 5-minute candle close, a JSON message is published to the `kline:closed` channel (configurable via `REDIS_KLINE_CHANNEL`). Downstream services (e.g. Pattern Analyzer) subscribe to this channel to receive closed candle data without going through the Application Layer.
+
+**Message format:**
+
+```json
+{
+  "type": "candle_closed",
+  "event_time": 1700000000000,
+  "pair": "BTCUSDT",
+  "contract_type": "PERPETUAL",
+  "kline": {
+    "open_time": 1700000000000,
+    "close_time": 1700000299999,
+    "interval": "5m",
+    "open": "42000.00",
+    "high": "42100.00",
+    "low": "41900.00",
+    "close": "42050.00",
+    "volume": "123.456",
+    "num_trades": 500,
+    "is_closed": true
+  }
+}
+```
+
+A Redis connection failure at startup logs a warning and disables publishing — the WebSocket stream and frontend broadcast continue unaffected.
 
 ### Key Modules
 
@@ -151,6 +188,7 @@ Binance USDS Futures
 | `src/connection_manager.py` | Manages frontend client connections and in-memory candle state |
 | `src/models.py` | `KlineData` / `KlineMessage` dataclasses and parse helpers |
 | `src/config.py` | `pydantic-settings` config loaded from `.env` |
+| `src/redis_publisher.py` | Redis connection lifecycle and closed candle publisher |
 
 ## Development
 

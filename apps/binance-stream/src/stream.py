@@ -16,6 +16,7 @@ from websockets.exceptions import ConnectionClosed
 
 from .connection_manager import ConnectionManager
 from .models import kline_message_to_dict, parse_kline_message
+from . import redis_publisher
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,9 @@ async def _handle_message(raw_text: str, cm: ConnectionManager) -> None:
     candle_dict = kline_message_to_dict(msg)
     if msg.kline.is_closed:
         cm.update_closed_candle(candle_dict)
-        await cm.broadcast({**candle_dict, "type": "candle_closed"})
+        closed_payload = {**candle_dict, "type": "candle_closed"}
+        await cm.broadcast(closed_payload)
+        await redis_publisher.publish_closed_candle(closed_payload)
     else:
         cm.update_current_candle(candle_dict)
         await cm.broadcast({**candle_dict, "type": "tick"})

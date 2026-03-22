@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     port: int = 3001
     binance_api_key: str = ""
     binance_api_secret: str = ""
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_kline_channel: str = "kline:closed"
 
 
 settings = Settings()

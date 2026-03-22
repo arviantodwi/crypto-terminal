@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from .config import settings
 from .connection_manager import ConnectionManager
 from .stream import fetch_initial_candles, run_binance_stream
+from . import redis_publisher
 
 
 class HealthResponse(BaseModel):
@@ -39,6 +40,8 @@ TRACKED_PAIRS = ["btcusdt"]
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    await redis_publisher.connect()
+
     for pair in TRACKED_PAIRS:
         try:
             _managers[pair] = ConnectionManager()
@@ -61,6 +64,8 @@ async def lifespan(_: FastAPI):
     if _stream_tasks:
         await asyncio.gather(*_stream_tasks.values(), return_exceptions=True)
     logger.info("All stream tasks stopped")
+
+    await redis_publisher.close()
 
 
 app = FastAPI(
