@@ -9,6 +9,7 @@ This is a **pnpm workspace monorepo** containing:
 - **`apps/web/`** — Next.js 16 frontend (React 19, Tailwind CSS v4, TypeScript)
 - **`apps/binance-stream/`** — Python WebSocket streamer (FastAPI, Binance USDS Futures)
 - **`apps/candle-collector/`** — Node.js service that fetches historical OHLC data from CoinDesk and stores it in PostgreSQL
+- **`apps/instrument-registry/`** — Node.js service that syncs tradable instrument data from Binance and stores it in PostgreSQL
 - **`packages/types/`** — Shared TypeScript types (future use)
 
 ### Data Flow
@@ -29,6 +30,13 @@ CoinDesk API (REST)
 apps/candle-collector (Fastify + Node.js)  ← triggered manually via HTTP
     ↓
 PostgreSQL (historical OHLC candles)
+
+Binance USDS Futures REST API
+    ↓
+apps/instrument-registry (Fastify + Node.js)  ← periodic cron sync + manual trigger
+    ↓
+    ├─→ PostgreSQL (instruments table)
+    └─→ Redis (exchange:instruments channel — change events)
 ```
 
 ## Prerequisites
@@ -36,7 +44,8 @@ PostgreSQL (historical OHLC candles)
 - **Node.js** 20+ and **pnpm** 9+
 - **Python** 3.12 (via [pyenv](https://github.com/pyenv/pyenv))
 - **Poetry** ([installation guide](https://python-poetry.org/docs/#installation))
-- **PostgreSQL** (required by `candle-collector`)
+- **PostgreSQL** (required by `candle-collector` and `instrument-registry`)
+- **Redis** (required by `instrument-registry`)
 
 ## Quick Start
 
@@ -68,6 +77,10 @@ cp apps/binance-stream/.env.example apps/binance-stream/.env
 # Candle collector (requires PostgreSQL + CoinDesk API key)
 cp apps/candle-collector/.env.example apps/candle-collector/.env
 # Edit .env with your DATABASE_URL and COINDESK_API_KEY
+
+# Instrument registry (requires PostgreSQL + Redis)
+cp apps/instrument-registry/.env.example apps/instrument-registry/.env
+# Edit .env with your DATABASE_URL, REDIS_HOST, REDIS_PORT, and BINANCE_REST_BASE_URL
 ```
 
 ### 3. Run Development Servers
@@ -95,11 +108,13 @@ pnpm dev:stream
 ### Monorepo (Root)
 
 ```bash
-pnpm dev                    # Run web + binance-stream in parallel
-pnpm dev:web                # Run Next.js app only
-pnpm dev:stream             # Run Python streamer only
-pnpm dev:candle-collector   # Run candle-collector only
-pnpm start:candle-collector # Run candle-collector in production mode
+pnpm dev                        # Run web + binance-stream in parallel
+pnpm dev:web                    # Run Next.js app only
+pnpm dev:stream                 # Run Python streamer only
+pnpm dev:candle-collector       # Run candle-collector only
+pnpm start:candle-collector     # Run candle-collector in production mode
+pnpm dev:instrument-registry    # Run instrument-registry only
+pnpm start:instrument-registry  # Run instrument-registry in production mode
 ```
 
 ### Next.js App (`apps/web/`)
@@ -140,6 +155,17 @@ pnpm dev            # Start dev server with hot reload (localhost:3002)
 pnpm start          # Start production server
 ```
 
+### Instrument Registry (`apps/instrument-registry/`)
+
+```bash
+cd apps/instrument-registry
+pnpm install        # Install dependencies
+pnpm db:generate    # Generate DB migration (after schema changes)
+pnpm db:migrate     # Apply pending migrations
+pnpm dev            # Start dev server with hot reload (localhost:3003)
+pnpm start          # Start production server
+```
+
 ## Tech Stack
 
 ### Frontend (`apps/web/`)
@@ -168,6 +194,16 @@ pnpm start          # Start production server
 - **Database:** PostgreSQL via Drizzle ORM
 - **Package Manager:** pnpm
 
+### Instrument Registry (`apps/instrument-registry/`)
+
+- **Framework:** Fastify v5 (Node.js)
+- **Language:** TypeScript (ESM)
+- **Data Source:** Binance USDS Futures REST API
+- **Database:** PostgreSQL via Drizzle ORM
+- **Cache/Pubsub:** Redis (ioredis)
+- **Scheduling:** node-cron
+- **Package Manager:** pnpm
+
 ## Project Structure
 
 ```
@@ -190,14 +226,24 @@ crypto-terminal/
 │   │   │   ├── models.py     # Kline data models
 │   │   │   └── config.py     # Environment settings
 │   │   └── pyproject.toml
-│   └── candle-collector/     # Node.js historical OHLC collector
+│   ├── candle-collector/     # Node.js historical OHLC collector
+│   │   ├── src/
+│   │   │   ├── server.ts     # Fastify server entry point
+│   │   │   ├── app.ts        # App factory
+│   │   │   ├── config.ts     # Environment settings
+│   │   │   ├── db/           # Drizzle schema, client, migrations
+│   │   │   ├── plugins/      # Fastify plugins (postgres, coindesk)
+│   │   │   └── routes/       # HTTP route handlers
+│   │   └── package.json
+│   └── instrument-registry/  # Node.js instrument sync service
 │       ├── src/
 │       │   ├── server.ts     # Fastify server entry point
 │       │   ├── app.ts        # App factory
 │       │   ├── config.ts     # Environment settings
 │       │   ├── db/           # Drizzle schema, client, migrations
-│       │   ├── plugins/      # Fastify plugins (postgres, coindesk)
-│       │   └── routes/       # HTTP route handlers
+│       │   ├── plugins/      # Fastify plugins (postgres, redis, sync)
+│       │   ├── routes/       # HTTP route handlers
+│       │   └── services/     # Binance REST client, sync logic
 │       └── package.json
 ├── packages/
 │   └── types/                # Shared TypeScript types (future use)
