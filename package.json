@@ -9,6 +9,8 @@
     "dev:stream": "cd apps/binance-stream && poetry run uvicorn src.main:app --reload --host 0.0.0.0 --port 3001",
     "dev:candle-collector": "pnpm --filter candle-collector dev",
     "start:candle-collector": "pnpm --filter candle-collector start",
+    "dev:instrument-registry": "pnpm --filter instrument-registry dev",
+    "start:instrument-registry": "pnpm --filter instrument-registry start",
     "build:web": "pnpm --filter web build",
     "start:web": "pnpm --filter web start",
     "lint:web": "pnpm --filter web lint",
