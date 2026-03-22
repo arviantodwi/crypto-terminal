@@ -9,20 +9,20 @@ the caller — a Redis failure must not interrupt the WebSocket stream.
 import json
 import logging
 
-import redis.asyncio as aioredis
+from redis.asyncio import Redis
 
 from .config import settings
 
 logger = logging.getLogger(__name__)
 
-_redis: aioredis.Redis | None = None
+_redis: Redis | None = None
 
 
 async def connect() -> None:
     """Open the Redis connection. Called during FastAPI lifespan startup."""
     global _redis
     try:
-        _redis = aioredis.Redis(
+        _redis = Redis(
             host=settings.redis_host,
             port=settings.redis_port,
             decode_responses=True,
