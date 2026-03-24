@@ -48,19 +48,25 @@ type TradingConviction = Exclude<ConvictionTier, 'Skip'>;
 type PercentileMatrix = Record<Route, Record<TradingConviction, number>>;
 
 export const PERCENTILE_MATRIX: PercentileMatrix = {
-  // 4 eligible formulas: T1, T2, T3, T4
+  // 4 eligible formulas (T1–T4) sorted ascending by risk; values are 0-based
+  // indices into that array, so 0 = 1st of 4 (tightest), 2 = 3rd of 4, etc.
+  // Higher conviction → smaller index → tighter (lower-risk) formula.
   Trend: {
     Moderate: 2, // 75th  → 3rd of 4
     High: 1,     // 50th  → 2nd of 4
     Dominant: 0, // 25th  → 1st of 4 (tightest)
   },
-  // 4 eligible formulas: R1, R2, R4, R5
+  // 4 eligible formulas (R1, R2, R4, R5) sorted ascending by risk; values are
+  // 0-based indices, so 1 = 2nd of 4, 3 = 4th of 4 (widest), etc.
+  // Higher conviction → smaller index → tighter formula.
   Reversal: {
     Moderate: 3, // 100th → 4th of 4 (widest)
     High: 2,     // 75th  → 3rd of 4
     Dominant: 1, // 50th  → 2nd of 4
   },
-  // 5 eligible formulas: P1, P2, P3, P4, P5
+  // 5 eligible formulas (P1–P5) sorted ascending by risk; values are 0-based
+  // indices, so 1 = 2nd of 5, 3 = 4th of 5, etc.
+  // Higher conviction → smaller index → tighter formula.
   Pullback: {
     Moderate: 3, // 80th  → 4th of 5
     High: 2,     // 60th  → 3rd of 5
