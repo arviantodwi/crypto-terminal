@@ -12,37 +12,37 @@ export function classifyCandle(
 ): CandleLabel {
   if (
     pct_change > CANDLE_THRESHOLDS.PCT_UP_STRONG &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_STRONG
+    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_STRONG
   ) {
     return "up_strong";
   }
   if (
     pct_change > CANDLE_THRESHOLDS.PCT_UP_MEDIUM &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_MEDIUM
+    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_MEDIUM
   ) {
     return "up_medium";
   }
   if (
     pct_change > CANDLE_THRESHOLDS.PCT_UP_WEAK &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_WEAK
+    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_WEAK
   ) {
     return "up_weak";
   }
   if (
     pct_change < CANDLE_THRESHOLDS.PCT_DOWN_STRONG &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_STRONG
+    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_STRONG
   ) {
     return "down_strong";
   }
   if (
     pct_change < CANDLE_THRESHOLDS.PCT_DOWN_MEDIUM &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_MEDIUM
+    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_MEDIUM
   ) {
     return "down_medium";
   }
   if (
     pct_change < CANDLE_THRESHOLDS.PCT_DOWN_WEAK &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_WEAK
+    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_WEAK
   ) {
     return "down_weak";
   }
