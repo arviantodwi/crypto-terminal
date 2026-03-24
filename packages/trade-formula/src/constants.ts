@@ -13,13 +13,10 @@ export const CANDLE_THRESHOLDS = {
   PCT_DOWN_MEDIUM: -0.5,
   PCT_DOWN_WEAK: -0.1,
 
-  // body_ratio boundaries
-  BODY_UP_STRONG: 0.5,
-  BODY_UP_MEDIUM: 0.4,
-  BODY_UP_WEAK: 0.3,
-  BODY_DOWN_STRONG: 0.5,
-  BODY_DOWN_MEDIUM: 0.4,
-  BODY_DOWN_WEAK: 0.3,
+  // body_ratio boundaries (direction-agnostic — same threshold for up and down)
+  BODY_RATIO_STRONG: 0.5,
+  BODY_RATIO_MEDIUM: 0.4,
+  BODY_RATIO_WEAK: 0.3,
 } as const;
 
 // ── Probability tier boundaries ──────────────────────────────────────────────
