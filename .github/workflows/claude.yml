@@ -47,5 +47,5 @@ jobs:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
           # claude_args: '--allowedTools "Write(.claude/rules/**)"'
-          dangerously_allowed_tools: "Bash,Edit,Write,Glob,Grep,Read,mcp__github_comment__update_claude_comment"
+          dangerously_allowed_tools: "Bash,Edit,Write,Glob,Grep,Read,mcp__github_comment__update_claude_comment,pnpm"
 
