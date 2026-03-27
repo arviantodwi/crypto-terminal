@@ -6,6 +6,7 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm lint:fix)",
+      "Bash(pnpm test:*)",
       "mcp__figma-bridge__get_design_context",
       "mcp__figma-bridge__get_document",
       "mcp__figma-bridge__get_node",
