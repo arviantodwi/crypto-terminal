@@ -10,41 +10,27 @@ export function classifyCandle(
   pct_change: number,
   body_ratio: number,
 ): CandleLabel {
-  if (
-    pct_change > CANDLE_THRESHOLDS.PCT_UP_STRONG &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_STRONG
-  ) {
-    return "up_strong";
+  const t = CANDLE_THRESHOLDS;
+
+  if (pct_change > t.PCT_UP_STRONG) {
+    return body_ratio >= t.BODY_RATIO_STRONG ? "up_strong" : "flat";
   }
-  if (
-    pct_change > CANDLE_THRESHOLDS.PCT_UP_MEDIUM &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_MEDIUM
-  ) {
-    return "up_medium";
+  if (pct_change > t.PCT_UP_MEDIUM && pct_change < t.PCT_UP_STRONG) {
+    return body_ratio >= t.BODY_RATIO_MEDIUM ? "up_medium" : "flat";
   }
-  if (
-    pct_change > CANDLE_THRESHOLDS.PCT_UP_WEAK &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_WEAK
-  ) {
-    return "up_weak";
+  if (pct_change > t.PCT_UP_WEAK && pct_change < t.PCT_UP_MEDIUM) {
+    return body_ratio >= t.BODY_RATIO_WEAK ? "up_weak" : "flat";
   }
-  if (
-    pct_change < CANDLE_THRESHOLDS.PCT_DOWN_STRONG &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_STRONG
-  ) {
-    return "down_strong";
+
+  if (pct_change < t.PCT_DOWN_STRONG) {
+    return body_ratio >= t.BODY_RATIO_STRONG ? "down_strong" : "flat";
   }
-  if (
-    pct_change < CANDLE_THRESHOLDS.PCT_DOWN_MEDIUM &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_MEDIUM
-  ) {
-    return "down_medium";
+  if (pct_change < t.PCT_DOWN_MEDIUM && pct_change > t.PCT_DOWN_STRONG) {
+    return body_ratio >= t.BODY_RATIO_MEDIUM ? "down_medium" : "flat";
   }
-  if (
-    pct_change < CANDLE_THRESHOLDS.PCT_DOWN_WEAK &&
-    body_ratio >= CANDLE_THRESHOLDS.BODY_RATIO_WEAK
-  ) {
-    return "down_weak";
+  if (pct_change < t.PCT_DOWN_WEAK && pct_change > t.PCT_DOWN_MEDIUM) {
+    return body_ratio >= t.BODY_RATIO_WEAK ? "down_weak" : "flat";
   }
+
   return "flat";
 }
