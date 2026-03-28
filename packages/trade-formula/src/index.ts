@@ -5,3 +5,6 @@ export * from "./classifier.js";
 export * from "./precompute.js";
 export * from "./route.js";
 export * from "./probability.js";
+export * from "./group/trend.js";
+export * from "./group/reversal.js";
+export * from "./group/pullback.js";
