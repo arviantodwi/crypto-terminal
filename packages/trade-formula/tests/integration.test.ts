@@ -1,5 +1,5 @@
 /**
- * End-to-end integration test for @phantom/trade-formula.
+ * End-to-end integration test for @crypto-terminal/trade-formula.
  *
  * Reproduces the full Section 12 worked example from the README using ONLY
  * imports from the package entry point — no internal path imports.
@@ -43,7 +43,7 @@ import {
   calcDollarRisk,
   // Types (imported to annotate locals)
   type OhlcCandle,
-} from "@phantom/trade-formula";
+} from '@crypto-terminal/trade-formula';
 
 // ── §12 raw OHLC input ────────────────────────────────────────────────────────
 

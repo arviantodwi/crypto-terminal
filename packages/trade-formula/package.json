@@ -1,5 +1,5 @@
 {
-  "name": "@phantom/trade-formula",
+  "name": "@crypto-terminal/trade-formula",
   "version": "0.1.0",
   "description": "Shared math foundation for the Phantom Terminal system",
   "type": "module",
