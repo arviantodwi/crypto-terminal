@@ -53,7 +53,7 @@ const RAW = {
   c3: { open: 65_350, high: 65_850, low: 65_300, close: 65_750 },
 };
 
-const ENTRY_PRICE = 65_000; // c3 close used as entry
+const ENTRY_PRICE = 65_000; // fixed entry price from README §12 example
 const ACCOUNT_SIZE = 1_000;
 const RISK_PCT = 3;
 const TP_MULTIPLIER = 2;
