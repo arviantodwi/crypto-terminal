@@ -1,5 +1,10 @@
-import { PERCENTILE_MATRIX } from "./constants.js";
-import type { ConvictionTier, GroupFormulaResult, PercentileSelectionResult, Route } from "./types.js";
+import { PERCENTILE_MATRIX } from './constants.js';
+import type {
+  ConvictionTier,
+  GroupFormulaResult,
+  PercentileSelectionResult,
+  Route,
+} from './types.js';
 
 /**
  * Selects the SL formula from eligible group formula outputs using percentile
@@ -18,16 +23,21 @@ import type { ConvictionTier, GroupFormulaResult, PercentileSelectionResult, Rou
  */
 export function selectSlFormula(
   route: Route,
-  conviction_tier: Exclude<ConvictionTier, "Skip">,
+  conviction_tier: Exclude<ConvictionTier, 'Skip'>,
   eligible_formula_outputs: GroupFormulaResult[],
 ): PercentileSelectionResult {
   const sorted = [...eligible_formula_outputs].sort((a, b) => a.value - b.value);
   const index = PERCENTILE_MATRIX[route][conviction_tier];
   const selected = sorted[index];
+  if (!selected) {
+    throw new RangeError(
+      `selectSlFormula: index ${index} out of bounds for ${sorted.length} eligible formulas (route=${route}, conviction=${conviction_tier})`,
+    );
+  }
   const percentile_rank = Math.round(((index + 1) / sorted.length) * 100);
   return {
     formula_name: selected.name,
-    value: selected.value,
     percentile_rank,
+    value: selected.value,
   };
 }
