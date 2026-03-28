@@ -1,5 +1,5 @@
-import { labelSign } from "./helper/label.js";
-import type { CandleLabel, Route } from "./types.js";
+import { labelSign } from './helper/label.js';
+import type { CandleLabel, Route } from './types.js';
 
 /**
  * Determines the route for a 3-candle window based on directional agreement
@@ -18,7 +18,7 @@ export function discriminateRoute(
   c3_momentum_score: number,
 ): Route {
   if (directional_agreement === 3 || directional_agreement === -3) {
-    return "Trend";
+    return 'Trend';
   }
 
   try {
@@ -26,7 +26,7 @@ export function discriminateRoute(
       labelSign(c1_label) !== labelSign(c3_label) &&
       Math.abs(c3_momentum_score) > Math.abs(c1_momentum_score)
     ) {
-      return "Reversal";
+      return 'Reversal';
     }
   } catch {
     throw new Error(
@@ -34,5 +34,5 @@ export function discriminateRoute(
     );
   }
 
-  return "Pullback";
+  return 'Pullback';
 }

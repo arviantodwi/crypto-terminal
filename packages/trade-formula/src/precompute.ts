@@ -1,14 +1,11 @@
-import { labelSign } from "./helper/label.js";
-import type { CandleLabel } from "./types.js";
+import { labelSign } from './helper/label.js';
+import type { CandleLabel } from './types.js';
 
 /**
  * Momentum score for a single candle: pct_change × body_ratio.
  * Filters noise — only counts moves backed by body strength (see README §3).
  */
-export function calcMomentumScore(
-  pct_change: number,
-  body_ratio: number,
-): number {
+export function calcMomentumScore(pct_change: number, body_ratio: number): number {
   return pct_change * body_ratio;
 }
 
@@ -16,10 +13,7 @@ export function calcMomentumScore(
  * Sequence slope across the 3-candle window: c3.pct_change - c1.pct_change.
  * Positive = accelerating, negative = fading, sign flip = reversal (see README §3).
  */
-export function calcSequenceSlope(
-  c1_pct_change: number,
-  c3_pct_change: number,
-): number {
+export function calcSequenceSlope(c1_pct_change: number, c3_pct_change: number): number {
   return c3_pct_change - c1_pct_change;
 }
 

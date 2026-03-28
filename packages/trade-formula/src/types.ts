@@ -24,19 +24,19 @@ export type TradeDecision = 'Trade' | 'Skip' | 'Conflicted';
  * computed from them (see README §0).
  */
 export interface OhlcCandle {
-  // Raw fields from exchange
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-
-  // Derived fields
-  /** (close - open) / open × 100 — signed percentage move */
-  pct_change: number;
   /** abs(close - open) / (high - low) — body proportion of full range (0–1) */
   body_ratio: number;
   /** (high - low) / open × 100 — total candle span as a percentage of open */
   candle_range: number;
+  close: number;
+  high: number;
+  low: number;
+  // Raw fields from exchange
+  open: number;
+
+  // Derived fields
+  /** (close - open) / open × 100 — signed percentage move */
+  pct_change: number;
 }
 
 // ── Pre-computation layer ────────────────────────────────────────────────────
@@ -46,16 +46,16 @@ export interface OhlcCandle {
  * Computed once before routing and group formula evaluation.
  */
 export interface PrecomputeResult {
+  /** sign(c1) + sign(c2) + sign(c3) — possible values: ±1 or ±3 */
+  directional_agreement: number;
   /** pct_change × body_ratio per candle [c1, c2, c3] */
   momentum_score: [number, number, number];
   /** c3.pct_change - c1.pct_change */
   sequence_slope: number;
-  /** 1 - body_ratio per candle [c1, c2, c3] */
-  wick_ratio: [number, number, number];
   /** avg(c1.candle_range, c2.candle_range, c3.candle_range) */
   volatility_proxy: number;
-  /** sign(c1) + sign(c2) + sign(c3) — possible values: ±1 or ±3 */
-  directional_agreement: number;
+  /** 1 - body_ratio per candle [c1, c2, c3] */
+  wick_ratio: [number, number, number];
 }
 
 // ── Group formulas ───────────────────────────────────────────────────────────
@@ -68,8 +68,8 @@ export interface PrecomputeResult {
 export interface GroupFormulaResult {
   /** Formula identifier, e.g. 'T1', 'R3', 'P4' */
   name: string;
-  value: number;
   sl_eligible: boolean;
+  value: number;
 }
 
 // ── Percentile selection ─────────────────────────────────────────────────────
@@ -80,9 +80,9 @@ export interface GroupFormulaResult {
  */
 export interface PercentileSelectionResult {
   formula_name: string;
-  value: number;
   /** Percentile rank used for selection, e.g. 75 for 75th percentile */
   percentile_rank: number;
+  value: number;
 }
 
 // ── Trade execution parameters ───────────────────────────────────────────────
@@ -92,14 +92,14 @@ export interface PercentileSelectionResult {
  * calculations (see README §7–§9).
  */
 export interface TradeParameters {
+  /** Actual dollar amount at risk */
+  dollar_risk: number;
+  /** Integer leverage clamped to [1, 20] */
+  leverage: number;
   /** Stop loss as a positive percentage magnitude */
   sl_pct: number;
   sl_price: number;
   tp_price: number;
-  /** Integer leverage clamped to [1, 20] */
-  leverage: number;
-  /** Actual dollar amount at risk */
-  dollar_risk: number;
   /** True when sl_pct > risk_pct — leverage is floored to 1x */
   wide_sl_flag: boolean;
 }
@@ -122,7 +122,7 @@ export interface ConflictResult {
  * detection result (see README §2).
  */
 export interface TradeDecisionResult {
-  decision: TradeDecision;
-  conviction: ConvictionTier;
   conflict_result: ConflictResult;
+  conviction: ConvictionTier;
+  decision: TradeDecision;
 }

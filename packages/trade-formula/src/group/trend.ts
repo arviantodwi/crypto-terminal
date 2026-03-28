@@ -1,4 +1,4 @@
-import type { GroupFormulaResult, OhlcCandle } from "../types.js";
+import type { GroupFormulaResult, OhlcCandle } from '../types.js';
 
 /**
  * T1 — Simple Average: avg(c1.pct_change, c2.pct_change, c3.pct_change).
@@ -10,7 +10,7 @@ export function calcSimpleAverage(
   c3: OhlcCandle,
 ): GroupFormulaResult {
   const value = Math.abs((c1.pct_change + c2.pct_change + c3.pct_change) / 3);
-  return { name: "T1", value, sl_eligible: true };
+  return { name: 'T1', sl_eligible: true, value };
 }
 
 /**
@@ -22,10 +22,8 @@ export function calcWeightedAverage(
   c2: OhlcCandle,
   c3: OhlcCandle,
 ): GroupFormulaResult {
-  const value = Math.abs(
-    c1.pct_change * 0.2 + c2.pct_change * 0.3 + c3.pct_change * 0.5,
-  );
-  return { name: "T2", value, sl_eligible: true };
+  const value = Math.abs(c1.pct_change * 0.2 + c2.pct_change * 0.3 + c3.pct_change * 0.5);
+  return { name: 'T2', sl_eligible: true, value };
 }
 
 /**
@@ -41,7 +39,7 @@ export function calcConvictionWeighted(
   const m2 = c2.pct_change * c2.body_ratio;
   const m3 = c3.pct_change * c3.body_ratio;
   const value = Math.abs((m1 + m2 + m3) / 3);
-  return { name: "T3", value, sl_eligible: true };
+  return { name: 'T3', sl_eligible: true, value };
 }
 
 /**
@@ -54,15 +52,13 @@ export function calcRangeCeiling(
   c3: OhlcCandle,
 ): GroupFormulaResult {
   const value = Math.max(c1.candle_range, c2.candle_range, c3.candle_range);
-  return { name: "T4", value, sl_eligible: true };
+  return { name: 'T4', sl_eligible: true, value };
 }
 
 /**
  * T5 — Trend Acceleration: sequence_slope (c3.pct_change - c1.pct_change).
  * Directional signal only — not a magnitude, not eligible for SL selection (see README §5).
  */
-export function calcTrendAcceleration(
-  sequence_slope: number,
-): GroupFormulaResult {
-  return { name: "T5", value: sequence_slope, sl_eligible: false };
+export function calcTrendAcceleration(sequence_slope: number): GroupFormulaResult {
+  return { name: 'T5', sl_eligible: false, value: sequence_slope };
 }

@@ -1,5 +1,5 @@
-import { LEVERAGE_CONSTRAINTS } from "./constants.js";
-import type { TradeSide } from "./types.js";
+import { LEVERAGE_CONSTRAINTS } from './constants.js';
+import type { TradeSide } from './types.js';
 
 /**
  * Converts sl_pct to an actual SL price level (see README §7).
@@ -9,15 +9,9 @@ import type { TradeSide } from "./types.js";
  *
  * sl_pct is a raw percentage (e.g. 0.514 means 0.514%), not a decimal.
  */
-export function calcSlPrice(
-  entry_price: number,
-  sl_pct: number,
-  side: TradeSide,
-): number {
+export function calcSlPrice(entry_price: number, sl_pct: number, side: TradeSide): number {
   const sl_distance = entry_price * (sl_pct / 100);
-  return side === "LONG"
-    ? entry_price - sl_distance
-    : entry_price + sl_distance;
+  return side === 'LONG' ? entry_price - sl_distance : entry_price + sl_distance;
 }
 
 /**
@@ -35,7 +29,7 @@ export function calcTpPrice(
   side: TradeSide,
 ): number {
   const sl_distance = entry_price * (sl_pct / 100);
-  return side === "LONG"
+  return side === 'LONG'
     ? entry_price + sl_distance * tp_multiplier
     : entry_price - sl_distance * tp_multiplier;
 }
@@ -68,10 +62,6 @@ export function calcLeverage(
  *
  * sl_pct is a raw percentage (e.g. 0.514 means 0.514%), not a decimal.
  */
-export function calcDollarRisk(
-  account_size: number,
-  leverage: number,
-  sl_pct: number,
-): number {
+export function calcDollarRisk(account_size: number, leverage: number, sl_pct: number): number {
   return account_size * leverage * (sl_pct / 100);
 }

@@ -1,11 +1,11 @@
-import { PROBABILITY_TIERS } from "./constants.js";
+import { PROBABILITY_TIERS } from './constants.js';
 import type {
   ConflictResult,
   ConvictionTier,
   Route,
   TradeDecisionResult,
   TradeSide,
-} from "./types.js";
+} from './types.js';
 
 /**
  * Maps a probability value to a conviction tier (see README §2).
@@ -19,10 +19,10 @@ import type {
  */
 export function getConvictionTier(probability: number): ConvictionTier {
   const t = PROBABILITY_TIERS;
-  if (probability >= t.DOMINANT_MIN) return "Dominant";
-  if (probability >= t.HIGH_MIN) return "High";
-  if (probability >= t.MODERATE_MIN) return "Moderate";
-  return "Skip";
+  if (probability >= t.DOMINANT_MIN) return 'Dominant';
+  if (probability >= t.HIGH_MIN) return 'High';
+  if (probability >= t.MODERATE_MIN) return 'Moderate';
+  return 'Skip';
 }
 
 /**
@@ -38,7 +38,7 @@ export function detectConflict(
   route: Route,
   directional_agreement: number,
 ): ConflictResult {
-  const structural: TradeSide = directional_agreement > 0 ? "LONG" : "SHORT";
+  const structural: TradeSide = directional_agreement > 0 ? 'LONG' : 'SHORT';
   if (postgres_direction !== structural) {
     return {
       conflict: true,
@@ -67,18 +67,18 @@ export function evaluateTradeDecision(
   conviction_tier: ConvictionTier,
   conflict: ConflictResult,
 ): TradeDecisionResult {
-  if (conviction_tier === "Skip") {
-    return { decision: "Skip", conviction: conviction_tier, conflict_result: conflict };
+  if (conviction_tier === 'Skip') {
+    return { conflict_result: conflict, conviction: conviction_tier, decision: 'Skip' };
   }
 
-  if (conviction_tier === "Dominant") {
-    return { decision: "Trade", conviction: conviction_tier, conflict_result: conflict };
+  if (conviction_tier === 'Dominant') {
+    return { conflict_result: conflict, conviction: conviction_tier, decision: 'Trade' };
   }
 
   // Moderate or High
   if (conflict.conflict) {
-    return { decision: "Conflicted", conviction: conviction_tier, conflict_result: conflict };
+    return { conflict_result: conflict, conviction: conviction_tier, decision: 'Conflicted' };
   }
 
-  return { decision: "Trade", conviction: conviction_tier, conflict_result: conflict };
+  return { conflict_result: conflict, conviction: conviction_tier, decision: 'Trade' };
 }
