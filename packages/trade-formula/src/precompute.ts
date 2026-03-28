@@ -47,15 +47,16 @@ export function calcDirectionalAgreement(
   c2_label: CandleLabel,
   c3_label: CandleLabel,
 ): -3 | -1 | 1 | 3 {
+  let sum: number;
   try {
-    const sum = labelSign(c1_label) + labelSign(c2_label) + labelSign(c3_label);
-    if (sum !== -3 && sum !== -1 && sum !== 1 && sum !== 3) {
-      throw new Error(`Unexpected directional agreement sum: ${sum}`);
-    }
-    return sum;
+    sum = labelSign(c1_label) + labelSign(c2_label) + labelSign(c3_label);
   } catch {
     throw new Error(
       `calcDirectionalAgreement requires non-flat candle labels, got: [${c1_label}, ${c2_label}, ${c3_label}]`,
     );
   }
+  if (sum !== -3 && sum !== -1 && sum !== 1 && sum !== 3) {
+    throw new Error(`Unexpected directional agreement sum: ${sum}`);
+  }
+  return sum;
 }
