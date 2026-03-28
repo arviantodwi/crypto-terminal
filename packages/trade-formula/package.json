@@ -1,5 +1,5 @@
 {
-  "name": "@phantom/trade-formula",
+  "name": "@crypto-terminal/trade-formula",
   "version": "0.1.0",
   "description": "Shared math foundation for the Phantom Terminal system",
   "type": "module",
@@ -13,9 +13,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
