@@ -5,7 +5,7 @@
   "description": "Fetches historical 5-minute OHLC data from CoinDesk and stores it in PostgreSQL",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --env-file .env src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
