@@ -1,4 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { calcBodyRatio, calcCandleRange, calcPctChange } from '@crypto-terminal/trade-formula';
 import { ohlcvCandles, type NewOhlcvCandle } from '../../db/schema';
 
 interface FetchOhlcBody {
@@ -51,9 +52,9 @@ function normalize(record: CoindeskRecord, instrument: string, timeframe: string
     num_trades: record.TOTAL_TRADES,
     instrument,
     timeframe,
-    pct_change: open !== 0 ? ((close - open) / open) * 100 : 0,
-    candle_range: open !== 0 ? ((high - low) / open) * 100 : 0,
-    body_ratio: high === low ? 1.0 : Math.abs(close - open) / (high - low),
+    pct_change: open !== 0 ? calcPctChange(open, close) : 0,
+    candle_range: open !== 0 ? calcCandleRange(open, high, low) : 0,
+    body_ratio: calcBodyRatio(open, close, high, low),
   };
 }
 

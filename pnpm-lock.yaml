@@ -10,6 +10,9 @@ importers:
 
   apps/candle-collector:
     dependencies:
+      '@crypto-terminal/trade-formula':
+        specifier: workspace:*
+        version: link:../../packages/trade-formula
       drizzle-orm:
         specifier: ^0.40.0
         version: 0.40.1(@types/pg@8.20.0)(gel@2.2.0)(pg@8.20.0)
