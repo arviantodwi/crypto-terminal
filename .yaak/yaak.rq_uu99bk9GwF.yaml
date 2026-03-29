@@ -1,0 +1,32 @@
+type: http_request
+model: http_request
+id: rq_uu99bk9GwF
+createdAt: 2026-03-29T20:21:39.550525
+updatedAt: 2026-03-29T20:42:25.038266
+workspaceId: wk_bSocGwdQUk
+folderId: fl_zpnDeu2EyD
+authentication: {}
+authenticationType: null
+body:
+  text: |-
+    {
+      "instrument": "BTCUSDT",
+      "to_ts": 1769942100,
+      "aggregate": 5,
+      "pages": 20
+    }
+bodyType: application/json
+description: |-
+  | to_ts    | Approx start (UTC) | Approx end (UTC)    |
+  |:---------|:-------------------|:--------------------|
+  |1769942100|Jan 4, 2026 13:55   |Feb 1, 2026 13:50    |
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: AngMtBQw6H
+method: POST
+name: OHLCV (16001-24000)
+sortPriority: 2000.001
+url: http://localhost:3002/ohlc/fetch
+urlParameters: []
