@@ -8,5 +8,9 @@
   "python.analysis.extraPaths": ["./apps/binance-stream/src"],
   "python.defaultInterpreterPath": "./apps/binance-stream/.venv/bin/python",
   "python-envs.defaultEnvManager": "ms-python.python:poetry",
-  "python-envs.defaultPackageManager": "ms-python.python:poetry"
+  "python-envs.defaultPackageManager": "ms-python.python:poetry",
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "off"
+  }
 }
