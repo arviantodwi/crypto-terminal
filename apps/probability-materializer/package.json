@@ -1,0 +1,29 @@
+{
+  "name": "probability-materializer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI that computes pattern probabilities from OHLCV candles and upserts them into the pattern_probabilities table",
+  "type": "module",
+  "scripts": {
+    "compute": "tsx --env-file .env src/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@crypto-terminal/trade-formula": "workspace:*",
+    "drizzle-orm": "^0.40.0",
+    "pg": "^8.13.3",
+    "pino": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.30.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
