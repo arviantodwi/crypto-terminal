@@ -67,8 +67,10 @@ export function computeProbabilities(
 
     if (c4_label.startsWith('up_')) {
       existing.up_count++;
-    } else {
+    } else if (c4_label.startsWith('down_')) {
       existing.down_count++;
+    } else {
+      throw new Error(`Unexpected c4_label: ${c4_label}`);
     }
 
     accumulator.set(key, existing);
