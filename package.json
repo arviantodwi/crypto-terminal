@@ -19,7 +19,8 @@
     "pg:down": "podman compose -f apps/postgres/compose.yaml down",
     "pg:stop": "podman compose -f apps/postgres/compose.yaml stop",
     "pg:logs": "podman compose -f apps/postgres/compose.yaml logs -f postgres",
-    "pg:destroy": "bash apps/postgres/destroy-data.sh"
+    "pg:destroy": "bash apps/postgres/destroy-data.sh",
+    "compute:probability-materializer": "pnpm --filter probability-materializer compute"
   },
   "engines": {
     "node": ">=20",
