@@ -10,6 +10,9 @@ export const seedOhlcSchema = {
       numbers: { type: 'integer', minimum: 1 },
     },
   },
+  // The 200 response schema is intentionally absent: the route hijacks the raw
+  // socket and streams NDJSON directly, so Fastify's schema serializer never
+  // runs on the 200 path.
   response: {
     400: {
       type: 'object',
