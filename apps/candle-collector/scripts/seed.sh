@@ -52,6 +52,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if ! [[ "$AGGREGATE" =~ ^[0-9]+$ ]]; then
+  echo "✗ AGGREGATE must be a positive integer, got: $AGGREGATE" >&2
+  exit 1
+fi
+
 if [[ "$FORWARD_FILL" == "false" && -z "$NUMBERS" ]]; then
   echo "✗ At least one of -f/--forward-fill or -n/--numbers must be provided." >&2
   echo ""
