@@ -35,6 +35,10 @@ while [[ $# -gt 0 ]]; do
         echo "✗ -n/--numbers requires a value" >&2
         exit 1
       fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+        echo "✗ -n/--numbers must be a positive integer, got: $2" >&2
+        exit 1
+      fi
       NUMBERS="$2"
       shift 2
       ;;
