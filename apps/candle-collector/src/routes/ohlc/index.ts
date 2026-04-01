@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { fetchOhlcHandler } from './handler';
-import { fetchOhlcSchema } from './schema';
+import { fetchOhlcHandler } from './fetch-handler';
+import { fetchOhlcSchema } from './fetch-schema';
 import { seedOhlcHandler } from './seed-handler';
 import { seedOhlcSchema } from './seed-schema';
 
