@@ -13,6 +13,10 @@ export interface CoindeskRecord {
   TOTAL_TRADES: number;
 }
 
+export interface AppError extends Error {
+  statusCode?: number;
+}
+
 // In-memory lock: tracks instruments currently being fetched
 export const activeFetches = new Set<string>();
 

@@ -5,6 +5,7 @@ import {
   getClosestAggregateTs,
   normalize,
   upsertCandles,
+  type AppError,
   type CoindeskRecord,
 } from './shared';
 
@@ -13,10 +14,6 @@ interface FetchOhlcBody {
   to_ts?: number;
   aggregate?: number;
   pages?: number;
-}
-
-interface AppError extends Error {
-  statusCode?: number;
 }
 
 export async function fetchOhlcHandler(

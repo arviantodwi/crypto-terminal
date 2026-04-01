@@ -9,6 +9,7 @@ import {
   normalize,
   upsertCandles,
   delay,
+  type AppError,
   type CoindeskRecord,
 } from './shared';
 
@@ -17,10 +18,6 @@ interface SeedOhlcBody {
   aggregate?: number;
   forward_fill?: boolean;
   numbers?: number;
-}
-
-interface AppError extends Error {
-  statusCode?: number;
 }
 
 export async function seedOhlcHandler(
