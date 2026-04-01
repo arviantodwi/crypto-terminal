@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { count, max, min, eq } from 'drizzle-orm';
+import { count, max, min, eq, and } from 'drizzle-orm';
 import { ohlcvCandles } from '../../db/schema';
 import { config } from '../../config';
 import {
@@ -46,7 +46,7 @@ export async function seedOhlcHandler(
     const countResult = await db
       .select({ total: count() })
       .from(ohlcvCandles)
-      .where(eq(ohlcvCandles.instrument, instrument));
+      .where(and(eq(ohlcvCandles.instrument, instrument), eq(ohlcvCandles.timeframe, timeframe)));
     const existingCount = Number(countResult[0]?.total ?? 0);
     if (existingCount >= numbers) {
       return reply.code(400).send({
@@ -103,7 +103,7 @@ export async function seedOhlcHandler(
       const maxResult = await db
         .select({ maxTs: max(ohlcvCandles.open_time) })
         .from(ohlcvCandles)
-        .where(eq(ohlcvCandles.instrument, instrument));
+        .where(and(eq(ohlcvCandles.instrument, instrument), eq(ohlcvCandles.timeframe, timeframe)));
       const maxOpenTime = maxResult[0]?.maxTs ?? null;
       const closestAggregateTs = getClosestAggregateTs(intervalSeconds);
 
@@ -198,7 +198,7 @@ export async function seedOhlcHandler(
       const countResult = await db
         .select({ total: count() })
         .from(ohlcvCandles)
-        .where(eq(ohlcvCandles.instrument, instrument));
+        .where(and(eq(ohlcvCandles.instrument, instrument), eq(ohlcvCandles.timeframe, timeframe)));
       const currentTotal = Number(countResult[0]?.total ?? 0);
       const backwardBudget = numbers - currentTotal;
 
@@ -214,7 +214,7 @@ export async function seedOhlcHandler(
         const minResult = await db
           .select({ minTs: min(ohlcvCandles.open_time) })
           .from(ohlcvCandles)
-          .where(eq(ohlcvCandles.instrument, instrument));
+          .where(and(eq(ohlcvCandles.instrument, instrument), eq(ohlcvCandles.timeframe, timeframe)));
         const minOpenTime = minResult[0]?.minTs ?? null;
 
         let currentToTs =
