@@ -17,4 +17,5 @@ export const config = {
   },
   port: parseInt(process.env.PORT ?? '3002', 10),
   logLevel: process.env.LOG_LEVEL ?? 'info',
+  seedPagesDelayMs: parseInt(process.env.SEED_PAGES_DELAY_MS ?? '100', 10),
 };

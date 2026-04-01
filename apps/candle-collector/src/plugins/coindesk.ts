@@ -1,17 +1,7 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import { config } from '../config';
-
-interface CoindeskRecord {
-  TIMESTAMP: number;
-  OPEN: number;
-  HIGH: number;
-  LOW: number;
-  CLOSE: number;
-  VOLUME: number;
-  QUOTE_VOLUME: number;
-  TOTAL_TRADES: number;
-}
+import type { CoindeskRecord } from '../routes/ohlc/shared';
 
 interface CoindeskResponse {
   Data?: CoindeskRecord[];
@@ -26,7 +16,11 @@ interface AppError extends Error {
 declare module 'fastify' {
   interface FastifyInstance {
     coindesk: {
-      fetchPage: (options: { instrument: string; toTs: number; aggregate: number }) => Promise<CoindeskRecord[]>;
+      fetchPage: (options: {
+        instrument: string;
+        toTs: number;
+        aggregate: number;
+      }) => Promise<{ data: CoindeskRecord[]; ratelimitRemaining: number | null }>;
     };
   }
 }
@@ -42,7 +36,7 @@ async function coindeskPlugin(fastify: FastifyInstance): Promise<void> {
     instrument: string;
     toTs: number;
     aggregate: number;
-  }): Promise<CoindeskRecord[]> {
+  }): Promise<{ data: CoindeskRecord[]; ratelimitRemaining: number | null }> {
     const url = new URL('/futures/v1/historical/minutes', baseUrl);
     url.searchParams.set('market', 'binance');
     url.searchParams.set('instrument', instrument);
@@ -58,6 +52,9 @@ async function coindeskPlugin(fastify: FastifyInstance): Promise<void> {
         Authorization: `Bearer ${apiKey}`,
       },
     });
+
+    const ratelimitRemainingHeader = response.headers.get('X-Ratelimit-Remaining');
+    const ratelimitRemaining = ratelimitRemainingHeader !== null ? Number(ratelimitRemainingHeader) : null;
 
     if (response.status !== 200) {
       const body = await response.text().catch(() => '');
@@ -76,7 +73,7 @@ async function coindeskPlugin(fastify: FastifyInstance): Promise<void> {
       throw error;
     }
 
-    return json.Data ?? [];
+    return { data: json.Data ?? [], ratelimitRemaining };
   }
 
   fastify.decorate('coindesk', { fetchPage });
