@@ -80,9 +80,8 @@ export async function fetchOhlcHandler(
         });
       }
 
-      const timestamps = rawData.map((r) => r.TIMESTAMP);
-      const pageEarliest = Math.min(...timestamps);
-      const pageLatest = Math.max(...timestamps);
+      const pageEarliest = rawData.reduce((min, r) => (r.TIMESTAMP < min ? r.TIMESTAMP : min), rawData[0].TIMESTAMP);
+      const pageLatest = rawData.reduce((max, r) => (r.TIMESTAMP > max ? r.TIMESTAMP : max), rawData[0].TIMESTAMP);
 
       if (earliestTs === null || pageEarliest < earliestTs) earliestTs = pageEarliest;
       if (latestTs === null || pageLatest > latestTs) latestTs = pageLatest;

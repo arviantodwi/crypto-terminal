@@ -135,9 +135,8 @@ export async function seedOhlcHandler(
             const candles = rawData.map((r) => normalize(r, instrument, timeframe));
             const insertResult = await upsertCandles(db, candles);
 
-            const timestamps = rawData.map((r) => r.TIMESTAMP);
-            const pageEarliest = Math.min(...timestamps);
-            const pageLatest = Math.max(...timestamps);
+            const pageEarliest = rawData.reduce((min, r) => (r.TIMESTAMP < min ? r.TIMESTAMP : min), rawData[0].TIMESTAMP);
+            const pageLatest = rawData.reduce((max, r) => (r.TIMESTAMP > max ? r.TIMESTAMP : max), rawData[0].TIMESTAMP);
 
             phase1Inserted += insertResult.inserted;
             phase1Skipped += insertResult.skipped;
@@ -236,9 +235,8 @@ export async function seedOhlcHandler(
             const candles = rawData.map((r) => normalize(r, instrument, timeframe));
             const insertResult = await upsertCandles(db, candles);
 
-            const timestamps = rawData.map((r) => r.TIMESTAMP);
-            const pageEarliest = Math.min(...timestamps);
-            const pageLatest = Math.max(...timestamps);
+            const pageEarliest = rawData.reduce((min, r) => (r.TIMESTAMP < min ? r.TIMESTAMP : min), rawData[0].TIMESTAMP);
+            const pageLatest = rawData.reduce((max, r) => (r.TIMESTAMP > max ? r.TIMESTAMP : max), rawData[0].TIMESTAMP);
 
             phase2Inserted += insertResult.inserted;
             phase2Skipped += insertResult.skipped;
