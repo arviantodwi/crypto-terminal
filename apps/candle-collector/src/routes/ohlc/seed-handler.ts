@@ -220,8 +220,13 @@ export async function seedOhlcHandler(
         let currentToTs =
           minOpenTime !== null ? minOpenTime - intervalSeconds : getClosestAggregateTs(intervalSeconds);
 
+        let phase2Inserted = 0;
+        let phase2Skipped = 0;
+        let phase2PagesFetched = 0;
+
         for (let page = 1; page <= backwardPages; page++) {
           pagesFetched++;
+          phase2PagesFetched++;
 
           try {
             const result = await request.server.coindesk.fetchPage({ instrument, toTs: currentToTs, aggregate });
@@ -238,6 +243,8 @@ export async function seedOhlcHandler(
             const pageEarliest = Math.min(...timestamps);
             const pageLatest = Math.max(...timestamps);
 
+            phase2Inserted += insertResult.inserted;
+            phase2Skipped += insertResult.skipped;
             totalInserted += insertResult.inserted;
             totalSkipped += insertResult.skipped;
 
@@ -272,6 +279,14 @@ export async function seedOhlcHandler(
             return;
           }
         }
+
+        flush({
+          status: 'phase_complete',
+          phase: 'backward_fill',
+          pages_fetched: phase2PagesFetched,
+          inserted: phase2Inserted,
+          skipped: phase2Skipped,
+        });
       }
     }
 
