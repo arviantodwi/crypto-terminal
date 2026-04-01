@@ -64,10 +64,12 @@ BAR_WIDTH=$((TERM_WIDTH - 50))
 [[ $BAR_WIDTH -lt 10 ]] && BAR_WIDTH=10
 
 # ── Build request body ────────────────────────────────────────────────────────
-REQUEST_BODY="{\"instrument\":\"$INSTRUMENT\",\"aggregate\":$AGGREGATE"
-[[ "$FORWARD_FILL" == "true" ]] && REQUEST_BODY="${REQUEST_BODY},\"forward_fill\":true"
-[[ -n "$NUMBERS" ]] && REQUEST_BODY="${REQUEST_BODY},\"numbers\":$NUMBERS"
-REQUEST_BODY="${REQUEST_BODY}}"
+REQUEST_BODY=$(jq -n \
+  --arg instrument "$INSTRUMENT" \
+  --argjson aggregate "$AGGREGATE" \
+  '{instrument: $instrument, aggregate: $aggregate}')
+[[ "$FORWARD_FILL" == "true" ]] && REQUEST_BODY=$(printf '%s' "$REQUEST_BODY" | jq '. + {forward_fill: true}')
+[[ -n "$NUMBERS" ]] && REQUEST_BODY=$(printf '%s' "$REQUEST_BODY" | jq --argjson n "$NUMBERS" '. + {numbers: $n}')
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 fmt_num() {
