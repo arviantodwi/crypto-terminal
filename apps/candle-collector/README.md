@@ -138,23 +138,27 @@ The connection stays open and the server writes one JSON object per line. Object
 
 #### Using `seed.sh`
 
-`scripts/seed.sh` is a developer convenience wrapper that calls `/ohlc/seed` and renders a live progress bar in the terminal.
+`scripts/seed.sh` is a developer convenience wrapper that calls `/ohlc/seed` and renders a live
+progress bar in the terminal. On success it automatically runs `probability-materializer` for the
+same instrument and timeframe. Pass `--skip-materialize` to skip that step.
 
 **Dependencies:** `curl`, `jq`
 
 ```bash
-bash scripts/seed.sh -f                  # forward fill only
-bash scripts/seed.sh -n 500000           # backward fill to 500k candles
-bash scripts/seed.sh -f -n 500000        # forward fill, then backward fill
+bash scripts/seed.sh -f                              # forward fill only
+bash scripts/seed.sh -n 500000                       # backward fill to 500k candles
+bash scripts/seed.sh -f -n 500000                    # forward fill, then backward fill
+bash scripts/seed.sh -f -n 500000 --skip-materialize # skip materializer
 INSTRUMENT=ETHUSDT bash scripts/seed.sh -f -n 500000
 ```
 
 **Flags:**
 
-| Flag                  | Description                                        |
-| --------------------- | -------------------------------------------------- |
-| `-f`, `--forward-fill` | Enable forward fill phase                         |
-| `-n`, `--numbers <N>` | Backward fill target (must be a positive integer)  |
+| Flag                   | Description                                                              |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `-f`, `--forward-fill` | Enable forward fill phase                                                |
+| `-n`, `--numbers <N>`  | Backward fill target (must be a positive integer)                        |
+| `--skip-materialize`   | Skip the automatic `probability-materializer` run after successful seed  |
 
 **Environment variables (override defaults):**
 

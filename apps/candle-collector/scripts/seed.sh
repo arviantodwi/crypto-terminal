@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # seed.sh — streams candle data from POST /ohlc/seed and renders a progress bar.
+#           On success, automatically runs probability-materializer unless
+#           --skip-materialize is passed.
 #
 # Dependencies: curl, jq
 #
 # Usage:
-#   bash scripts/seed.sh -f                 # forward fill only
-#   bash scripts/seed.sh -n 500000          # backward fill to 500k candles
-#   bash scripts/seed.sh -f -n 500000       # forward fill, then backward fill
+#   bash scripts/seed.sh -f                          # forward fill only
+#   bash scripts/seed.sh -n 500000                   # backward fill to 500k candles
+#   bash scripts/seed.sh -f -n 500000                # forward fill, then backward fill
+#   bash scripts/seed.sh -f -n 500000 --skip-materialize
 #   INSTRUMENT=ETHUSDT bash scripts/seed.sh -f -n 500000
 #
 # Environment variables:
@@ -22,6 +25,7 @@ AGGREGATE="${AGGREGATE:-5}"
 
 FORWARD_FILL=false
 NUMBERS=""
+SKIP_MATERIALIZE=false
 
 # ── Parse flags ───────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
@@ -41,6 +45,10 @@ while [[ $# -gt 0 ]]; do
       fi
       NUMBERS="$2"
       shift 2
+      ;;
+    --skip-materialize)
+      SKIP_MATERIALIZE=true
+      shift
       ;;
     -*)
       echo "✗ Unknown flag: $1" >&2
@@ -65,6 +73,13 @@ if [[ "$FORWARD_FILL" == "false" && -z "$NUMBERS" ]]; then
   echo "  bash scripts/seed.sh -n 500000          # backward fill to 500k candles"
   echo "  bash scripts/seed.sh -f -n 500000       # forward fill, then backward fill"
   exit 1
+fi
+
+# ── Derive timeframe from aggregate (mirrors aggregateToTimeframe in shared.ts) ──
+if [[ "$AGGREGATE" -ge 60 && $(( AGGREGATE % 60 )) -eq 0 ]]; then
+  TIMEFRAME="$(( AGGREGATE / 60 ))h"
+else
+  TIMEFRAME="${AGGREGATE}m"
 fi
 
 # ── Terminal width ────────────────────────────────────────────────────────────
@@ -216,6 +231,15 @@ if [[ -z "$http_status" || "$curl_exit" != "0" ]]; then
   [[ "$NEWLINE_NEEDED" == "true" ]] && echo ""
   echo "✗ Could not connect to candle-collector at $BASE_URL" >&2
   exit 1
+fi
+
+# ── Probability materializer ──────────────────────────────────────────────────
+if [[ "$EXIT_CODE" == "0" && "$SKIP_MATERIALIZE" == "false" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  MATERIALIZER_DIR="$(cd "$SCRIPT_DIR/../../probability-materializer" && pwd)"
+  echo ""
+  echo "→ Running probability-materializer (${INSTRUMENT} ${TIMEFRAME})…"
+  (cd "$MATERIALIZER_DIR" && INSTRUMENT="$INSTRUMENT" TIMEFRAME="$TIMEFRAME" pnpm compute)
 fi
 
 exit "$EXIT_CODE"
