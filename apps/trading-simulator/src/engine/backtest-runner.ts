@@ -111,6 +111,8 @@ export class BacktestRunner extends EventEmitter {
       winCount,
       lossCount,
       breakEvenCount,
+      // winRate denominator is ALL trades (wins + losses + breakevens), so a
+      // 50W/50L/10B record yields 50/110 = 45.5%, not 50/100 = 50%.
       winRate: trades.length > 0 ? (winCount / trades.length) * 100 : 0,
       totalPnlDollar,
       trades,
