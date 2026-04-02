@@ -14,6 +14,8 @@ export async function fetchAllCandles(
   instrument: string,
   timeframe: string,
 ): Promise<OhlcCandle[]> {
+  // NOTE: full in-memory load — for large datasets this can be significant.
+  // Consider streaming or pagination if memory becomes a concern.
   const rows = await db
     .select({
       open_time: ohlcvCandles.open_time,
