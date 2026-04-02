@@ -1,0 +1,27 @@
+{
+  "name": "trading-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backtesting engine for OHLCV-based trading strategies",
+  "type": "module",
+  "scripts": {
+    "start": "tsx --env-file .env src/index.ts",
+    "dev": "tsx --env-file .env --watch src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@crypto-terminal/trade-formula": "workspace:*",
+    "drizzle-orm": "^0.40.0",
+    "pg": "^8.13.3",
+    "pino": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
