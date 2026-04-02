@@ -30,7 +30,7 @@ export class Portfolio {
 
   // ── Position lifecycle ──────────────────────────────────────────────────────
 
-  openPosition(signal: TradeSignal): void {
+  openPosition(signal: TradeSignal, entryTimestamp: number): void {
     if (this.position !== null) {
       throw new Error('Cannot open position: close the existing position first');
     }
@@ -41,7 +41,7 @@ export class Portfolio {
       side: signal.direction,
       leverage: signal.leverage,
       dollarRisk: signal.dollarRisk,
-      entryTimestamp: new Date(),
+      entryTimestamp: new Date(entryTimestamp),
       metadata: signal.metadata,
     };
   }
@@ -83,7 +83,7 @@ export class Portfolio {
   ): ExecutedTrade | null {
     if (!this.position) return null;
 
-    const { entryPrice, slPrice, tpPrice, side, leverage, dollarRisk, metadata } = this.position;
+    const { entryPrice, slPrice, tpPrice, side, leverage, dollarRisk, entryTimestamp, metadata } = this.position;
 
     const slDistance =
       side === 'LONG' ? entryPrice - slPrice : slPrice - entryPrice;
@@ -96,9 +96,13 @@ export class Portfolio {
 
     const pnlPercent = this.balance > 0 ? (pnlDollar / this.balance) * 100 : 0;
 
+    // Note: `leverage` is stored as metadata only — it is not applied to position
+    // sizing here. P&L is driven entirely by dollarRisk and price distance, so
+    // strategies must bake leverage into dollarRisk themselves if needed.
     const trade: ExecutedTrade = {
       id: ++this.tradeIdCounter,
-      timestamp: exitTimestamp ? new Date(exitTimestamp) : new Date(),
+      entryTimestamp,
+      exitTimestamp: exitTimestamp ? new Date(exitTimestamp) : new Date(),
       direction: side,
       entryPrice,
       slPrice,

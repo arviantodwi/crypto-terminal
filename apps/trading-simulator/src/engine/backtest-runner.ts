@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import type { OhlcCandle, BacktestResults, ExecutedTrade, StrategyRunner } from './types.js';
+import type { OhlcCandle, BacktestResults, ExecutedTrade, StrategyRunner, TradeSignal } from './types.js';
 import { TimeMachine } from './time-machine.js';
 import { Portfolio } from './portfolio.js';
 
@@ -7,7 +7,7 @@ import { Portfolio } from './portfolio.js';
 
 export interface BacktestEvents {
   candle: [candles: [OhlcCandle, OhlcCandle, OhlcCandle], progress: string];
-  tradeOpened: [candle: OhlcCandle, signal: ReturnType<StrategyRunner['analyze']>];
+  tradeOpened: [candle: OhlcCandle, signal: TradeSignal];
   tradeClosed: [trade: ExecutedTrade];
   done: [results: BacktestResults];
 }
@@ -27,7 +27,7 @@ export interface BacktestRunnerOptions {
  * ```ts
  * const runner = new BacktestRunner({ candles, strategy, initialBalance: 1000 });
  * runner.on('tradeClosed', (trade) => console.log(trade));
- * const results = await runner.run();
+ * const results = runner.run();
  * ```
  */
 export class BacktestRunner extends EventEmitter {
@@ -44,7 +44,7 @@ export class BacktestRunner extends EventEmitter {
     this.progressInterval = options.progressInterval ?? 1000;
   }
 
-  async run(): Promise<BacktestResults> {
+  run(): BacktestResults {
     const timeMachine = new TimeMachine(this.candles);
     const portfolio = new Portfolio(this.initialBalance);
 
@@ -61,15 +61,8 @@ export class BacktestRunner extends EventEmitter {
         // SL is checked first — if both SL and TP levels are within the same candle,
         // SL takes priority (conservative assumption).
         const slHit = portfolio.checkStopLoss(c3);
-        if (!slHit) {
-          const tpHit = portfolio.checkTakeProfit(c3);
-          if (tpHit) {
-            const trades = portfolio.getTrades();
-            const closedTrade = trades[trades.length - 1]!;
-            this.emit('tradeClosed', closedTrade);
-            this.strategy.onTradeExecuted(closedTrade);
-          }
-        } else {
+        const tpHit = !slHit && portfolio.checkTakeProfit(c3);
+        if (slHit || tpHit) {
           const trades = portfolio.getTrades();
           const closedTrade = trades[trades.length - 1]!;
           this.emit('tradeClosed', closedTrade);
@@ -80,22 +73,25 @@ export class BacktestRunner extends EventEmitter {
       if (!portfolio.hasOpenPosition()) {
         const signal = this.strategy.analyze(window);
         if (signal !== null) {
-          portfolio.openPosition(signal);
+          portfolio.openPosition(signal, c3.open_time);
           this.emit('tradeOpened', c3, signal);
         }
       }
 
-      if (windowCount % this.progressInterval === 0) {
+      if (windowCount % this.progressInterval === 0 && process.stdout.isTTY) {
         process.stdout.write(`\r[backtest] ${timeMachine.progress()}`);
       }
     }
 
     // Clear the progress line
-    process.stdout.write('\n');
+    if (process.stdout.isTTY) {
+      process.stdout.write('\n');
+    }
 
     const trades = portfolio.getTrades();
     const winCount = trades.filter((t) => t.pnlDollar > 0).length;
-    const lossCount = trades.filter((t) => t.pnlDollar <= 0).length;
+    const lossCount = trades.filter((t) => t.pnlDollar < 0).length;
+    const breakEvenCount = trades.filter((t) => t.pnlDollar === 0).length;
     const totalPnlDollar = trades.reduce((sum, t) => sum + t.pnlDollar, 0);
 
     const results: BacktestResults = {
@@ -104,6 +100,7 @@ export class BacktestRunner extends EventEmitter {
       totalTrades: trades.length,
       winCount,
       lossCount,
+      breakEvenCount,
       winRate: trades.length > 0 ? (winCount / trades.length) * 100 : 0,
       totalPnlDollar,
       trades,

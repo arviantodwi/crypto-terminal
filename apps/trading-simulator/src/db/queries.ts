@@ -43,6 +43,9 @@ export async function fetchAllCandles(
 /**
  * Look up pattern probability stats for a specific 3-candle sequence.
  * Returns null if no matching row exists (pattern not yet materialised).
+ *
+ * Used by strategies that incorporate historical pattern probabilities into
+ * their signal logic (e.g. pattern-probability strategy).
  */
 export async function fetchPatternProbability(
   db: Db,

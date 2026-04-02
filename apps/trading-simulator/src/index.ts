@@ -56,6 +56,8 @@ async function main() {
       '[backtest] Fetching candles',
     );
 
+    const strategy = resolveStrategy(strategyArg);
+
     const candles = await fetchAllCandles(db, config.instrument, config.timeframe);
 
     log.info({ count: candles.length }, '[backtest] Candles loaded');
@@ -64,8 +66,6 @@ async function main() {
       log.error({ count: candles.length }, '[backtest] Not enough candles to run a backtest');
       process.exit(1);
     }
-
-    const strategy = resolveStrategy(strategyArg);
 
     log.info(
       {
@@ -95,7 +95,7 @@ async function main() {
       );
     });
 
-    const results = await runner.run();
+    const results = runner.run();
 
     log.info(
       {

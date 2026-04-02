@@ -13,6 +13,13 @@ export const config = {
   },
   instrument: process.env.INSTRUMENT ?? 'BTCUSDT',
   timeframe: process.env.TIMEFRAME ?? '5m',
-  initialBalance: Number(process.env.INITIAL_BALANCE ?? '1000'),
+  initialBalance: (() => {
+    const v = Number(process.env.INITIAL_BALANCE ?? '1000');
+    if (isNaN(v) || v <= 0) {
+      console.error('[config] INITIAL_BALANCE must be a positive number');
+      process.exit(1);
+    }
+    return v;
+  })(),
   logLevel: process.env.LOG_LEVEL ?? 'info',
 };

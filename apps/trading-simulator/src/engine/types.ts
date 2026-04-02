@@ -31,7 +31,8 @@ export interface TradeSignal {
 
 export interface ExecutedTrade {
   id: number;
-  timestamp: Date;
+  entryTimestamp: Date;
+  exitTimestamp: Date;
   direction: 'LONG' | 'SHORT';
   entryPrice: number;
   slPrice: number;
@@ -66,6 +67,8 @@ export interface BacktestResults {
   totalTrades: number;
   winCount: number;
   lossCount: number;
+  /** Trades where pnlDollar === 0 (not counted in winCount or lossCount). */
+  breakEvenCount: number;
   winRate: number;
   totalPnlDollar: number;
   trades: ExecutedTrade[];
