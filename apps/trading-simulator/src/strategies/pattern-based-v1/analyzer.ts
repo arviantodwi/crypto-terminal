@@ -74,7 +74,9 @@ export function analyzePattern(
 
   const { up_probability, down_probability } = prob;
 
-  // Determine direction based on which side meets the conviction threshold
+  // Determine direction based on which side meets the conviction threshold.
+  // Both cannot simultaneously meet the threshold: up_probability + down_probability === 100
+  // and convictionThreshold must be > 50, so at most one side can qualify.
   let direction: 'LONG' | 'SHORT';
   let postgresProbability: number;
 
