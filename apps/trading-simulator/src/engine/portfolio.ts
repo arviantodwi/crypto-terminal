@@ -79,7 +79,7 @@ export class Portfolio {
   closePosition(
     exitPrice: number,
     exitReason: 'SL' | 'TP',
-    exitTimestamp?: number,
+    exitTimestamp: number,
   ): ExecutedTrade | null {
     if (!this.position) return null;
 
@@ -102,7 +102,7 @@ export class Portfolio {
     const trade: ExecutedTrade = {
       id: ++this.tradeIdCounter,
       entryTimestamp,
-      exitTimestamp: exitTimestamp ? new Date(exitTimestamp) : new Date(),
+      exitTimestamp: new Date(exitTimestamp),
       direction: side,
       entryPrice,
       slPrice,
