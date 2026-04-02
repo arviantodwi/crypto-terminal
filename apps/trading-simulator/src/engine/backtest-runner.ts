@@ -88,6 +88,16 @@ export class BacktestRunner extends EventEmitter {
       process.stdout.write('\n');
     }
 
+    // Warn if a position is still open at the end of the dataset — it is never
+    // closed, so its unrealized P&L is silently excluded from finalBalance and
+    // trades[]. Callers comparing finalBalance - initialBalance vs totalPnlDollar
+    // will see them agree, but the open position's value is not reflected.
+    if (portfolio.hasOpenPosition()) {
+      process.stderr.write(
+        '[backtest] WARNING: backtest ended with an open position — unrealized P&L excluded from results\n',
+      );
+    }
+
     const trades = portfolio.getTrades();
     const winCount = trades.filter((t) => t.pnlDollar > 0).length;
     const lossCount = trades.filter((t) => t.pnlDollar < 0).length;
