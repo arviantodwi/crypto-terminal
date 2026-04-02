@@ -20,7 +20,7 @@ export type StrategyName = (typeof KNOWN_STRATEGIES)[number];
  * @throws Error if the strategy name is unknown.
  */
 export async function loadStrategy(
-  name: string,
+  name: StrategyName,
   db: Db,
   config: Pick<StrategyConfig, 'instrument' | 'timeframe' | 'initialBalance'> &
     Partial<Omit<StrategyConfig, 'instrument' | 'timeframe' | 'initialBalance'>>,
