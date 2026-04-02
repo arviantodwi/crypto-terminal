@@ -51,12 +51,12 @@ async function main() {
 
     const db = createDb(pool);
 
+    const strategy = resolveStrategy(strategyArg);
+
     log.info(
       { instrument: config.instrument, timeframe: config.timeframe },
       '[backtest] Fetching candles',
     );
-
-    const strategy = resolveStrategy(strategyArg);
 
     const candles = await fetchAllCandles(db, config.instrument, config.timeframe);
 
