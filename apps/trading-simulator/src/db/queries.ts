@@ -43,6 +43,30 @@ export async function fetchAllCandles(
 }
 
 /**
+ * Fetch all pattern probability rows for a given instrument and timeframe.
+ * Returns the full set as an array — callers should build a lookup Map keyed
+ * by "c1_label:c2_label:c3_label" for O(1) per-candle access.
+ *
+ * Intended for strategies that pre-load probabilities at initialisation time
+ * to keep the per-candle `analyze()` call synchronous.
+ */
+export async function fetchAllPatternProbabilities(
+  db: Db,
+  instrument: string,
+  timeframe: string,
+): Promise<PatternProbability[]> {
+  return db
+    .select()
+    .from(patternProbabilities)
+    .where(
+      and(
+        eq(patternProbabilities.instrument, instrument),
+        eq(patternProbabilities.timeframe, timeframe),
+      ),
+    );
+}
+
+/**
  * Look up pattern probability stats for a specific 3-candle sequence.
  * Returns null if no matching row exists (pattern not yet materialised).
  *

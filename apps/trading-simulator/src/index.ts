@@ -5,6 +5,7 @@ import { createDb } from './db/client.js';
 import { fetchAllCandles } from './db/queries.js';
 import { BacktestRunner } from './engine/backtest-runner.js';
 import type { ExecutedTrade, OhlcCandle, StrategyRunner, TradeSignal } from './engine/types.js';
+import { loadStrategy } from './strategies/loader.js';
 
 const log = pino({ level: config.logLevel });
 const { Pool } = pg;
@@ -27,12 +28,6 @@ const dummyStrategy: StrategyRunner = {
   },
 };
 
-function resolveStrategy(name: string): StrategyRunner {
-  if (name === 'dummy') return dummyStrategy;
-  log.error({ strategy: name }, '[cli] Unknown strategy');
-  process.exit(1);
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -51,7 +46,22 @@ async function main() {
 
     const db = createDb(pool);
 
-    const strategy = resolveStrategy(strategyArg);
+    let strategy: StrategyRunner;
+    if (strategyArg === 'dummy') {
+      strategy = dummyStrategy;
+    } else {
+      try {
+        strategy = await loadStrategy(strategyArg, db, {
+          instrument: config.instrument,
+          timeframe: config.timeframe,
+          initialBalance: config.initialBalance,
+        });
+        log.info({ strategy: strategyArg }, '[cli] Strategy loaded');
+      } catch (err) {
+        log.error({ err, strategy: strategyArg }, '[cli] Failed to load strategy');
+        process.exit(1);
+      }
+    }
 
     log.info(
       { instrument: config.instrument, timeframe: config.timeframe },
