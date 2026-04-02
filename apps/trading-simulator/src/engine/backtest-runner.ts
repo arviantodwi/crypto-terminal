@@ -119,6 +119,9 @@ export class BacktestRunner extends EventEmitter {
     };
 
     this.emit('done', results);
+    // NOTE: listeners are not removed after 'done'. For long-lived processes
+    // running multiple sequential backtests on the same instance, call
+    // runner.removeAllListeners() between runs to prevent listener accumulation.
     return results;
   }
 }
