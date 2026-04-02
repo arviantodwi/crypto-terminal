@@ -76,14 +76,14 @@ export function analyzePattern(
 
   // Determine direction based on which side meets the conviction threshold
   let direction: 'LONG' | 'SHORT';
-  let postgres_probability: number;
+  let postgresProbability: number;
 
   if (up_probability >= config.convictionThreshold) {
     direction = 'LONG';
-    postgres_probability = up_probability;
+    postgresProbability = up_probability;
   } else if (down_probability >= config.convictionThreshold) {
     direction = 'SHORT';
-    postgres_probability = down_probability;
+    postgresProbability = down_probability;
   } else {
     return null; // Neither side meets threshold
   }
@@ -106,7 +106,7 @@ export function analyzePattern(
 
   // ── Step 5: Conflict detection and trade decision ─────────────────────────
 
-  const conviction = getConvictionTier(postgres_probability);
+  const conviction = getConvictionTier(postgresProbability);
   const conflictResult = detectConflict(direction, route, directionalAgreement);
   const tradeDecision = evaluateTradeDecision(conviction, conflictResult);
 
@@ -183,7 +183,7 @@ export function analyzePattern(
       // Probability
       up_probability,
       down_probability,
-      postgres_probability,
+      postgres_probability: postgresProbability,
       // Pre-computation
       momentum_scores: [m1, m2, m3],
       sequence_slope: sequenceSlope,
