@@ -150,7 +150,12 @@ export function analyzePattern(
   const eligibleFormulas = allFormulas.filter((f) => f.sl_eligible);
 
   if (eligibleFormulas.length === 0) {
-    return null; // No eligible SL formulas — should not happen in valid data
+    // Should not happen with valid data — all route formula sets include at least one
+    // sl_eligible formula. Log a warning to surface unexpected data quality issues.
+    console.warn(
+      `[pattern-based-v1] No eligible SL formulas for route "${route}" — skipping signal`,
+    );
+    return null;
   }
 
   // ── Step 7: Select SL via percentile banding ─────────────────────────────
