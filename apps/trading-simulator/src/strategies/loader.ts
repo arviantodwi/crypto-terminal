@@ -7,7 +7,7 @@ import { PatternBasedV1 } from './pattern-based-v1/index.js';
 
 // ── Strategy registry ─────────────────────────────────────────────────────────
 
-const KNOWN_STRATEGIES = ['pattern-based-v1'] as const;
+export const KNOWN_STRATEGIES = ['pattern-based-v1'] as const;
 export type StrategyName = (typeof KNOWN_STRATEGIES)[number];
 
 /**

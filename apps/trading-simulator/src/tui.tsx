@@ -15,7 +15,7 @@ import { render } from 'ink';
 import { config } from './config.js';
 import { createDb } from './db/client.js';
 import { fetchAllCandles } from './db/queries.js';
-import { loadStrategy } from './strategies/loader.js';
+import { loadStrategy, KNOWN_STRATEGIES } from './strategies/loader.js';
 import { BASE_STRATEGY_CONFIG } from './strategies/base-config.js';
 import type { OhlcCandle, StrategyRunner, TradeSignal, ExecutedTrade } from './engine/types.js';
 import { App } from './tui/App.js';
@@ -26,6 +26,14 @@ const { Pool } = pg;
 
 const args = process.argv.slice(2);
 const strategyArg = args.find((a) => a.startsWith('--strategy='))?.split('=')[1] ?? 'dummy';
+
+const VALID_STRATEGIES = ['dummy', ...KNOWN_STRATEGIES] as const;
+if (!VALID_STRATEGIES.includes(strategyArg as (typeof VALID_STRATEGIES)[number])) {
+  process.stderr.write(
+    `[tui] Unknown strategy: "${strategyArg}". Valid strategies: ${VALID_STRATEGIES.join(', ')}\n`,
+  );
+  process.exit(1);
+}
 
 // ── Dummy strategy (no-op) ────────────────────────────────────────────────────
 
