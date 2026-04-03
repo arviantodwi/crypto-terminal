@@ -40,6 +40,9 @@ export class Portfolio {
     if (signal.entryPrice <= 0) {
       throw new Error(`Invalid signal: entryPrice must be positive, got ${signal.entryPrice}`);
     }
+    if (signal.leverage <= 0) {
+      throw new Error(`Invalid signal: leverage must be positive, got ${signal.leverage}`);
+    }
     if (signal.direction === 'LONG') {
       if (signal.slPrice >= signal.entryPrice) {
         throw new Error(
