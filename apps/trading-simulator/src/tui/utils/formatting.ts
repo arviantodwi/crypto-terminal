@@ -37,8 +37,8 @@ export function renderEquityCurve(values: number[], width: number, height: numbe
     return Array(height).fill(' '.repeat(width));
   }
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min = values.reduce((a, b) => (b < a ? b : a), values[0]!);
+  const max = values.reduce((a, b) => (b > a ? b : a), values[0]!);
   const range = max - min;
 
   // Sample values to fit width
