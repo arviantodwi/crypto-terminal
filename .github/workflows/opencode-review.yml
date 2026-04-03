@@ -3,17 +3,12 @@ name: OpenCode Review
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-  push:
-    branches-ignore:
-      - main
-      - master
-      - dev
 
 jobs:
   review:
-    if: |
-      (github.event_name == 'push') ||
-      (github.event_name == 'pull_request' && !contains(github.actor, '[bot]'))
+    # if: |
+    #   (github.event_name == 'push') ||
+    #   (github.event_name == 'pull_request' && !contains(github.actor, '[bot]'))
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -27,7 +22,7 @@ jobs:
       - uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
           model: opencode/minimax-m2.5-free
           use_github_token: true
