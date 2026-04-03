@@ -162,8 +162,10 @@ export function useBacktest(
 
     const progressStr = tm.progress();
     const parts = progressStr.split(' / ');
-    const processed = parseInt((parts[0] ?? '0').replace(/,/g, ''), 10);
-    const total = parseInt((parts[1] ?? '1').replace(/,/g, ''), 10);
+    const rawProcessed = parseInt((parts[0] ?? '0').replace(/,/g, ''), 10);
+    const rawTotal = parseInt((parts[1] ?? '1').replace(/,/g, ''), 10);
+    const processed = Number.isNaN(rawProcessed) ? 0 : rawProcessed;
+    const total = Number.isNaN(rawTotal) ? 1 : rawTotal;
 
     setState({
       status: done ? 'COMPLETE' : statusRef.current,
