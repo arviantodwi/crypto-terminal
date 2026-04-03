@@ -7,6 +7,8 @@
   "scripts": {
     "start": "tsx --env-file .env src/index.ts",
     "dev": "tsx --env-file .env --watch src/index.ts",
+    "tui": "tsx --env-file .env src/tui.tsx",
+    "tui:dummy": "tsx --env-file .env src/tui.tsx --strategy=dummy",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -14,12 +16,16 @@
   "dependencies": {
     "@crypto-terminal/trade-formula": "workspace:*",
     "drizzle-orm": "^0.40.0",
+    "ink": "^5.0.1",
+    "ink-spinner": "^5.0.0",
     "pg": "^8.13.3",
-    "pino": "^9.0.0"
+    "pino": "^9.0.0",
+    "react": "^18.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
+    "@types/react": "^18.3.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
