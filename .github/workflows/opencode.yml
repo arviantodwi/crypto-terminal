@@ -30,7 +30,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/workflows/opencode-shared-config.yml
+      - uses: ./.github/workflows/opencode-shared-config.yml@dev
 
       - name: Run opencode
         uses: anomalyco/opencode/github@latest

@@ -9,10 +9,13 @@ on:
       email:
         type: string
         default: "opencode-agent[bot]@users.noreply.github.com"
+      runner:
+        type: string
+        default: "ubuntu-latest"
 
 jobs:
   config:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     steps:
       - name: Configure Git user
         run: |
