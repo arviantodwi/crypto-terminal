@@ -66,6 +66,10 @@ function generateCandles(
   count: number,
   seed: number,
 ): Candle[] {
+  if (startPrice <= 0) throw new Error("startPrice must be positive");
+  if (count <= 0) throw new Error("count must be positive");
+  if (!Number.isInteger(seed)) throw new Error("seed must be an integer");
+
   const rand = mulberry32(seed);
   const candles: Candle[] = [];
   let price = startPrice;
@@ -143,12 +147,8 @@ function ema(closes: number[], period: number): (number | null)[] {
       prev = init;
       result.push(init);
     } else {
-      if (prev === null) {
-        result.push(null);
-      } else {
-        prev = closes[i] * k + prev * (1 - k);
-        result.push(prev);
-      }
+      prev = closes[i] * k + prev * (1 - k);
+      result.push(prev);
     }
   }
   return result;
@@ -291,9 +291,10 @@ function detectPatterns(candles: Candle[]): Pattern[] {
       patterns.push({ index: i, name: "Doji", direction: "neutral" });
     }
 
-    // Morning star (3-candle)
+    // Morning star (3-candle) - prev2 bearish, prev1 small body, curr bullish
     if (
       prev2.close < prev2.open &&
+      prev1.close < prev1.open &&
       Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close > curr.open &&
       curr.close > (prev2.open + prev2.close) / 2
@@ -301,9 +302,10 @@ function detectPatterns(candles: Candle[]): Pattern[] {
       patterns.push({ index: i, name: "Morning Star", direction: "bullish" });
     }
 
-    // Evening star (3-candle)
+    // Evening star (3-candle) - prev2 bullish, prev1 small body, curr bearish
     if (
       prev2.close > prev2.open &&
+      prev1.close > prev1.open &&
       Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close < curr.open &&
       curr.close < (prev2.open + prev2.close) / 2
