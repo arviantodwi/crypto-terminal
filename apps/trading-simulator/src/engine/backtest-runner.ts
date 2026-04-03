@@ -9,6 +9,8 @@ export interface BacktestEvents {
   candle: [candles: [OhlcCandle, OhlcCandle, OhlcCandle], progress: string];
   tradeOpened: [candle: OhlcCandle, signal: TradeSignal];
   tradeClosed: [trade: ExecutedTrade];
+  /** Emitted when strategy.analyze() throws. Backtest continues by skipping the candle. */
+  strategyError: [error: unknown, candles: [OhlcCandle, OhlcCandle, OhlcCandle]];
   done: [results: BacktestResults];
 }
 
@@ -18,6 +20,11 @@ export interface BacktestRunnerOptions {
   initialBalance: number;
   /** Log progress every N candles. Default 1000. */
   progressInterval?: number;
+  /**
+   * Whether to halt the backtest on the first strategy error.
+   * Default false — errors are emitted via 'strategyError' and the candle is skipped.
+   */
+  haltOnStrategyError?: boolean;
 }
 
 /**
@@ -35,6 +42,7 @@ export class BacktestRunner extends EventEmitter {
   private readonly strategy: StrategyRunner;
   private readonly initialBalance: number;
   private readonly progressInterval: number;
+  private readonly haltOnStrategyError: boolean;
 
   constructor(options: BacktestRunnerOptions) {
     super();
@@ -42,6 +50,7 @@ export class BacktestRunner extends EventEmitter {
     this.strategy = options.strategy;
     this.initialBalance = options.initialBalance;
     this.progressInterval = options.progressInterval ?? 1000;
+    this.haltOnStrategyError = options.haltOnStrategyError ?? false;
   }
 
   run(): BacktestResults {
@@ -49,6 +58,7 @@ export class BacktestRunner extends EventEmitter {
     const portfolio = new Portfolio(this.initialBalance);
 
     let windowCount = 0;
+    let strategyErrorCount = 0;
     let window: [OhlcCandle, OhlcCandle, OhlcCandle] | null;
 
     while ((window = timeMachine.next()) !== null) {
@@ -71,7 +81,21 @@ export class BacktestRunner extends EventEmitter {
       }
 
       if (!portfolio.hasOpenPosition()) {
-        const signal = this.strategy.analyze(window);
+        let signal: TradeSignal | null = null;
+        try {
+          signal = this.strategy.analyze(window);
+        } catch (err) {
+          strategyErrorCount++;
+          this.emit('strategyError', err, window);
+          if (this.haltOnStrategyError) {
+            throw new Error(
+              `[backtest] Strategy "${this.strategy.name}" threw on candle ${windowCount} — halting. ` +
+                `Original error: ${err instanceof Error ? err.message : String(err)}`,
+              { cause: err },
+            );
+          }
+          // Skip this candle — continue to next window
+        }
         if (signal !== null) {
           portfolio.openPosition(signal, c3.open_time);
           this.emit('tradeOpened', c3, signal);
@@ -115,6 +139,7 @@ export class BacktestRunner extends EventEmitter {
       // 50W/50L/10B record yields 50/110 = 45.5%, not 50/100 = 50%.
       winRate: trades.length > 0 ? (winCount / trades.length) * 100 : 0,
       totalPnlDollar,
+      strategyErrorCount,
       trades,
     };
 
