@@ -71,5 +71,7 @@ export interface BacktestResults {
   breakEvenCount: number;
   winRate: number;
   totalPnlDollar: number;
+  /** Number of candles where strategy.analyze() threw an exception. */
+  strategyErrorCount: number;
   trades: ExecutedTrade[];
 }

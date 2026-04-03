@@ -78,6 +78,7 @@ function buildInitialState(candles: OhlcCandle[], initialBalance: number): Backt
     progress: 0,
     trades: [],
     metrics: calculateMetrics([], initialBalance),
+    strategyErrorCount: 0,
   };
 }
 
@@ -99,6 +100,7 @@ export function useBacktest(
   const statusRef = useRef<BacktestStatus>('IDLE');
   const speedRef = useRef<SpeedLevel>(10);
   const recentTradesRef = useRef<ExecutedTrade[]>([]);
+  const strategyErrorCountRef = useRef<number>(0);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -141,7 +143,12 @@ export function useBacktest(
       // Analyze for new entry
       let signal: TradeSignal | null = null;
       if (!portfolio.hasOpenPosition()) {
-        signal = strategy.analyze(window);
+        try {
+          signal = strategy.analyze(window);
+        } catch {
+          // Skip candle on strategy error — consistent with BacktestRunner behaviour
+          strategyErrorCountRef.current++;
+        }
         if (signal) portfolio.openPosition(signal, c3.open_time);
       }
 
@@ -186,6 +193,7 @@ export function useBacktest(
       progress: total > 0 ? (processed / total) * 100 : 0,
       trades: recentTradesRef.current,
       metrics: calculateMetrics(allTrades, initialBalance),
+      strategyErrorCount: strategyErrorCountRef.current,
     });
   }, [strategy, initialBalance, stopInterval]);
 
@@ -235,15 +243,43 @@ export function useBacktest(
     stopInterval();
     initEngine();
     recentTradesRef.current = [];
+    strategyErrorCountRef.current = 0;
     setState(buildInitialState(candles, initialBalance));
   }, [stopInterval, initEngine, candles, initialBalance]);
 
   const saveResults = useCallback(() => {
     const allTrades = portfolioRef.current?.getTrades() ?? [];
+    const balance = portfolioRef.current?.getBalance() ?? initialBalance;
     const metrics = calculateMetrics(allTrades, initialBalance);
-    const filename = `backtest-results-${Date.now()}.json`;
-    writeFileSync(filename, JSON.stringify({ trades: allTrades, metrics }, null, 2));
-  }, [initialBalance]);
+    const timestamp = new Date().toISOString();
+    const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `backtest-${strategy.name}-${safeTimestamp}.json`;
+    const payload = {
+      metadata: {
+        strategy: strategy.name,
+        version: strategy.version,
+        initialBalance,
+        finalBalance: balance,
+        runDate: timestamp,
+      },
+      trades: allTrades,
+      metrics: {
+        totalTrades: metrics.totalTrades,
+        winRate: metrics.winRate,
+        totalPnL: metrics.totalPnL,
+        maxDrawdown: metrics.maxDrawdown,
+        sharpeRatio: metrics.sharpeRatio,
+        profitFactor: metrics.profitFactor,
+        expectedValue: metrics.expectedValue,
+        averageWin: metrics.averageWin,
+        averageLoss: metrics.averageLoss,
+        largestWin: metrics.largestWin,
+        largestLoss: metrics.largestLoss,
+        averageHoldTime: metrics.averageHoldTime,
+      },
+    };
+    writeFileSync(filename, JSON.stringify(payload, null, 2));
+  }, [strategy, initialBalance]);
 
   const setSpeed = useCallback(
     (newSpeed: SpeedLevel) => {

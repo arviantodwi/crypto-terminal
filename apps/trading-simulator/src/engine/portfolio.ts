@@ -25,6 +25,9 @@ export class Portfolio {
   private tradeIdCounter = 0;
 
   constructor(initialBalance: number) {
+    if (initialBalance <= 0) {
+      throw new Error(`initialBalance must be positive, got ${initialBalance}`);
+    }
     this.balance = initialBalance;
   }
 
@@ -33,6 +36,38 @@ export class Portfolio {
   openPosition(signal: TradeSignal, entryTimestamp: number): void {
     if (this.position !== null) {
       throw new Error('Cannot open position: close the existing position first');
+    }
+    if (signal.dollarRisk <= 0) {
+      throw new Error(`Invalid signal: dollarRisk must be positive, got ${signal.dollarRisk}`);
+    }
+    if (signal.entryPrice <= 0) {
+      throw new Error(`Invalid signal: entryPrice must be positive, got ${signal.entryPrice}`);
+    }
+    if (signal.leverage <= 0) {
+      throw new Error(`Invalid signal: leverage must be positive, got ${signal.leverage}`);
+    }
+    if (signal.direction === 'LONG') {
+      if (signal.slPrice >= signal.entryPrice) {
+        throw new Error(
+          `Invalid LONG signal: slPrice (${signal.slPrice}) must be below entryPrice (${signal.entryPrice})`,
+        );
+      }
+      if (signal.tpPrice <= signal.entryPrice) {
+        throw new Error(
+          `Invalid LONG signal: tpPrice (${signal.tpPrice}) must be above entryPrice (${signal.entryPrice})`,
+        );
+      }
+    } else {
+      if (signal.slPrice <= signal.entryPrice) {
+        throw new Error(
+          `Invalid SHORT signal: slPrice (${signal.slPrice}) must be above entryPrice (${signal.entryPrice})`,
+        );
+      }
+      if (signal.tpPrice >= signal.entryPrice) {
+        throw new Error(
+          `Invalid SHORT signal: tpPrice (${signal.tpPrice}) must be below entryPrice (${signal.entryPrice})`,
+        );
+      }
     }
     this.position = {
       entryPrice: signal.entryPrice,
