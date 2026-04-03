@@ -96,7 +96,15 @@ export class InMemoryTradeLog implements TradeLog {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function csvEscape(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+  // Quote values that contain special CSV characters OR start with formula
+  // trigger characters (=, +, -, @) to prevent formula injection when the
+  // file is opened in spreadsheet applications.
+  if (
+    value.includes(',') ||
+    value.includes('"') ||
+    value.includes('\n') ||
+    /^[=+\-@]/.test(value)
+  ) {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;

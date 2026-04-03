@@ -154,4 +154,23 @@ describe('InMemoryTradeLog — exportToCSV', () => {
     const content = readFileSync(file, 'utf-8');
     expect(content).toContain('"strategy,with,commas"');
   });
+
+  it('CSV values starting with formula trigger characters are quoted', () => {
+    const log = new InMemoryTradeLog();
+
+    for (const prefix of ['=', '+', '-', '@']) {
+      const stratName = `${prefix}SUM(A1:A10)`;
+      log.logTrade(makeTrade(), stratName, VERSION);
+    }
+
+    const file = join(tmpDir, 'formula.csv');
+    log.exportToCSV(file);
+
+    const content = readFileSync(file, 'utf-8');
+    // Each strategy name that starts with a formula trigger must be quoted
+    expect(content).toContain('"=SUM(A1:A10)"');
+    expect(content).toContain('"+SUM(A1:A10)"');
+    expect(content).toContain('"-SUM(A1:A10)"');
+    expect(content).toContain('"@SUM(A1:A10)"');
+  });
 });
