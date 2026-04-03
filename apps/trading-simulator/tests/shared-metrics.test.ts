@@ -143,9 +143,9 @@ describe('maxDrawdown', () => {
 });
 
 describe('profitFactor', () => {
-  it('computes gross profit / gross loss', () => {
-    // gross profit: 30+20+50=100, gross loss: 10+20=30 → pf = 100/30 ≈ 3.33
-    expect(profitFactor(SAMPLE_TRADES)).toBeCloseTo(100 / 30, 5);
+  it('computes gross profit / gross loss using pnlPercent', () => {
+    // gross profit (percent): 3+2+5=10, gross loss (percent): 1+2=3 → pf = 10/3 ≈ 3.33
+    expect(profitFactor(SAMPLE_TRADES)).toBeCloseTo(10 / 3, 5);
   });
 });
 

@@ -119,10 +119,10 @@ export function sharpeRatio(trades: ExecutedTrade[], riskFreeRate = 0): number {
  */
 export function profitFactor(trades: ExecutedTrade[]): number {
   const grossProfit = trades
-    .filter((t) => t.pnlDollar > 0)
-    .reduce((s, t) => s + t.pnlDollar, 0);
+    .filter((t) => t.pnlPercent > 0)
+    .reduce((s, t) => s + t.pnlPercent, 0);
   const grossLoss = Math.abs(
-    trades.filter((t) => t.pnlDollar < 0).reduce((s, t) => s + t.pnlDollar, 0),
+    trades.filter((t) => t.pnlPercent < 0).reduce((s, t) => s + t.pnlPercent, 0),
   );
 
   if (grossLoss === 0) return grossProfit > 0 ? Infinity : 0;
