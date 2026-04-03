@@ -6,7 +6,18 @@ import type { LoggedTrade } from './types.js';
 
 export interface TradeLog {
   logTrade(trade: ExecutedTrade, strategyName: string, strategyVersion: string): void;
+  /**
+   * Returns a shallow copy of the internal trade array.
+   * The array itself is a new instance, but the individual `LoggedTrade`
+   * objects are shared references — mutating a returned trade object will
+   * corrupt the log's internal state.
+   */
   getAllTrades(): LoggedTrade[];
+  /**
+   * Returns trades filtered by strategy name.
+   * Note: returned `LoggedTrade` objects are shared references to the
+   * internal log entries — do not mutate them.
+   */
   getTradesByStrategy(strategyName: string): LoggedTrade[];
   clearLog(): void;
   exportToJSON(filepath: string): void;
