@@ -39,7 +39,9 @@ export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
   const curveHeight = 5;
   const curveLines = renderEquityCurve(equityValues, curveWidth, curveHeight);
   const profitFactorStr =
-    metrics.profitFactor === Infinity ? '∞' : formatNumber(metrics.profitFactor, 2);
+    metrics.profitFactor === Infinity || isNaN(metrics.profitFactor)
+      ? '∞'
+      : formatNumber(metrics.profitFactor, 2);
 
   return (
     <Box borderStyle="single" borderColor="gray" flexDirection="column">
