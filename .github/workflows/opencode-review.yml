@@ -24,7 +24,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/workflows/opencode-shared-config.yml@dev
+      - name: Configure Git user
+        run: |
+          git config user.name "opencode[bot]"
+          git config user.email "opencode-agent[bot]@users.noreply.github.com"
 
       - uses: anomalyco/opencode/github@latest
         env:
