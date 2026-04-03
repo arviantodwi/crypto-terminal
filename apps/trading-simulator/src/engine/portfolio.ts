@@ -25,6 +25,9 @@ export class Portfolio {
   private tradeIdCounter = 0;
 
   constructor(initialBalance: number) {
+    if (initialBalance <= 0) {
+      throw new Error(`initialBalance must be positive, got ${initialBalance}`);
+    }
     this.balance = initialBalance;
   }
 
