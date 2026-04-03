@@ -135,7 +135,7 @@ export function PatternDisplay({ candles, patternData, tradeSignal }: PatternDis
             valueColor={tradeSignal.direction === 'LONG' ? 'green' : 'red'}
           />
           {patternData?.route && (
-            <KV label="Route" value={patternData.route!} valueColor="cyan" />
+            <KV label="Route" value={patternData.route} valueColor="cyan" />
           )}
           {patternData?.conviction && (
             <KV
