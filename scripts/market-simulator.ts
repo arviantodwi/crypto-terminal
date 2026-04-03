@@ -391,7 +391,7 @@ function computeStats(candles: Candle[]) {
     if (c > peak) peak = c;
     drawdowns.push(((peak - c) / peak) * 100);
   }
-  const maxDrawdown = Math.min(...drawdowns);
+  const maxDrawdown = -Math.min(...drawdowns);
 
   const volumes = candles.map((c) => c.volume);
   const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
