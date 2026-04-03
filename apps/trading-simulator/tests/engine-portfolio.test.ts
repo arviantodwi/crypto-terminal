@@ -55,6 +55,14 @@ describe('Portfolio construction', () => {
     expect(p.getBalance()).toBe(1000);
   });
 
+  it('throws when initialBalance is zero', () => {
+    expect(() => new Portfolio(0)).toThrow('initialBalance must be positive');
+  });
+
+  it('throws when initialBalance is negative', () => {
+    expect(() => new Portfolio(-500)).toThrow('initialBalance must be positive');
+  });
+
   it('starts with no open position', () => {
     const p = new Portfolio(1000);
     expect(p.hasOpenPosition()).toBe(false);
