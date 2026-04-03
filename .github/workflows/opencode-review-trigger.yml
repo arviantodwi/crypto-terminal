@@ -1,0 +1,23 @@
+name: Trigger OpenCode Review After Bot Commit
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+
+jobs:
+  trigger:
+    if: ${{ contains(github.actor, '[bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          ref: ${{ github.ref }}
+      - name: Empty commit as human to trigger review
+        run: |
+          git config user.name "arviantodwi"
+          git config user.email "dev@arvian.to"
+          git commit --allow-empty -m "ci: Trigger OpenCode review"
+          git push

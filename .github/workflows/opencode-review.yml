@@ -3,12 +3,11 @@ name: OpenCode Review
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 jobs:
   review:
-    # if: |
-    #   (github.event_name == 'push') ||
-    #   (github.event_name == 'pull_request' && !contains(github.actor, '[bot]'))
+    if: ${{ !contains(github.actor, '[bot]') }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
