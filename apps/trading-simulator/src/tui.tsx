@@ -25,7 +25,7 @@ const { Pool } = pg;
 // ── Parse CLI args ────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
-const strategyArg = args.find((a) => a.startsWith('--strategy='))?.split('=')[1] ?? 'dummy';
+const strategyArg = args.find((a) => a.startsWith('--strategy='))?.split('=')[1] || 'dummy';
 
 const VALID_STRATEGIES = ['dummy', ...KNOWN_STRATEGIES] as const;
 if (!VALID_STRATEGIES.includes(strategyArg as (typeof VALID_STRATEGIES)[number])) {
