@@ -213,9 +213,16 @@ describe('buildEquityCurve', () => {
   });
 
   it('returns single-element array for empty trades', () => {
-    const curve = buildEquityCurve([], 1000);
+    const start = new Date('2026-01-01T00:00:00Z');
+    const curve = buildEquityCurve([], 1000, start);
     expect(curve).toHaveLength(1);
     expect(curve[0].balance).toBe(1000);
+    expect(curve[0].timestamp).toEqual(start);
+  });
+
+  it('empty trades with no startTimestamp defaults to epoch (new Date(0))', () => {
+    const curve = buildEquityCurve([], 1000);
+    expect(curve[0].timestamp).toEqual(new Date(0));
   });
 });
 
@@ -233,6 +240,13 @@ describe('sharpeRatio', () => {
   it('returns positive value for overall positive returns', () => {
     const trades = [makeTrade(3, 30), makeTrade(2, 20), makeTrade(4, 40)];
     expect(sharpeRatio(trades)).toBeGreaterThan(0);
+  });
+
+  it('non-zero riskFreeReturnPercent lowers the ratio', () => {
+    const trades = [makeTrade(3, 30), makeTrade(2, 20), makeTrade(4, 40)];
+    const withoutRfr = sharpeRatio(trades, 0);
+    const withRfr = sharpeRatio(trades, 1); // 1% per-trade risk-free return
+    expect(withRfr).toBeLessThan(withoutRfr);
   });
 });
 

@@ -36,6 +36,9 @@ export interface PerformanceMetrics {
 // ── Annualization constant for 5-minute candles ───────────────────────────────
 
 // 288 candles per day × 365 days — used to annualize the per-trade Sharpe ratio.
+// IMPORTANT: This value is hardcoded for 5-minute candle intervals. If the
+// backtest runner processes candles of a different interval, update this
+// constant accordingly (e.g. 96 for 15-minute, 24 for 1-hour candles).
 const ANNUALIZATION_FACTOR = Math.sqrt(288 * 365);
 
 // ── Individual metric functions ───────────────────────────────────────────────
@@ -96,9 +99,17 @@ export function maxDrawdown(trades: ExecutedTrade[], initialBalance: number): nu
  * Annualized Sharpe ratio based on per-trade P&L percentages.
  *
  * Annualization factor assumes 5-minute candles (288 per day, 365 days/year).
+ * If this function is called with trades from a different candle interval the
+ * annualized result will be incorrect — either adjust `ANNUALIZATION_FACTOR`
+ * at the top of this module or pass the result through without annualizing.
+ *
  * Returns 0 when fewer than 2 trades exist or standard deviation is 0.
+ *
+ * @param riskFreeReturnPercent Per-trade risk-free return expressed as a
+ *   percentage (e.g. `0.1` = 0.1% per trade), not an annualised rate.
+ *   Default is `0`.
  */
-export function sharpeRatio(trades: ExecutedTrade[], riskFreeRate = 0): number {
+export function sharpeRatio(trades: ExecutedTrade[], riskFreeReturnPercent = 0): number {
   if (trades.length < 2) return 0;
 
   const returns = trades.map((t) => t.pnlPercent);
@@ -109,7 +120,7 @@ export function sharpeRatio(trades: ExecutedTrade[], riskFreeRate = 0): number {
 
   if (stdDev === 0) return 0;
 
-  return ((avgReturn - riskFreeRate) / stdDev) * ANNUALIZATION_FACTOR;
+  return ((avgReturn - riskFreeReturnPercent) / stdDev) * ANNUALIZATION_FACTOR;
 }
 
 /**
@@ -176,15 +187,20 @@ export function averageHoldTime(trades: ExecutedTrade[]): number {
 /**
  * Build an equity curve from the trade list.
  *
- * The first point uses the entry timestamp of the first trade (or current time
- * if the array is empty) at initialBalance. Each subsequent point is appended
- * after each trade closes.
+ * The first point uses the entry timestamp of the first trade (or
+ * `startTimestamp` if provided) at initialBalance. Each subsequent point is
+ * appended after each trade closes.
+ *
+ * @param startTimestamp Explicit start timestamp for the initial equity point.
+ *   Used when `trades` is empty to produce a deterministic curve. Defaults to
+ *   the first trade's `entryTimestamp` when trades are present.
  */
 export function buildEquityCurve(
   trades: ExecutedTrade[],
   initialBalance: number,
+  startTimestamp?: Date,
 ): EquityPoint[] {
-  const startTime = trades.length > 0 ? trades[0].entryTimestamp : new Date();
+  const startTime = trades.length > 0 ? trades[0].entryTimestamp : (startTimestamp ?? new Date(0));
   const curve: EquityPoint[] = [{ timestamp: startTime, balance: initialBalance }];
 
   let balance = initialBalance;
@@ -201,14 +217,19 @@ export function buildEquityCurve(
 /**
  * Compute all performance metrics from a list of executed trades.
  *
- * @param trades         Completed trades in chronological order.
- * @param initialBalance Starting account balance in USD.
- * @param riskFreeRate   Per-trade risk-free return for Sharpe ratio (default 0).
+ * @param trades               Completed trades in chronological order.
+ * @param initialBalance       Starting account balance in USD.
+ * @param riskFreeReturnPercent Per-trade risk-free return expressed as a
+ *   percentage (e.g. `0.1` = 0.1% per trade), not an annualised rate.
+ *   Default is `0`.
+ * @param startTimestamp       Explicit start timestamp for the equity curve's
+ *   initial point. Only relevant when `trades` is empty.
  */
 export function calculateMetrics(
   trades: ExecutedTrade[],
   initialBalance: number,
-  riskFreeRate = 0,
+  riskFreeReturnPercent = 0,
+  startTimestamp?: Date,
 ): PerformanceMetrics {
   return {
     totalTrades: totalTrades(trades),
@@ -217,7 +238,7 @@ export function calculateMetrics(
     winRate: winRate(trades),
     totalPnL: totalPnLPercent(trades, initialBalance),
     maxDrawdown: maxDrawdown(trades, initialBalance),
-    sharpeRatio: sharpeRatio(trades, riskFreeRate),
+    sharpeRatio: sharpeRatio(trades, riskFreeReturnPercent),
     profitFactor: profitFactor(trades),
     expectedValue: expectedValue(trades),
     averageWin: averageWin(trades),
@@ -225,6 +246,6 @@ export function calculateMetrics(
     largestWin: largestWin(trades),
     largestLoss: largestLoss(trades),
     averageHoldTime: averageHoldTime(trades),
-    equityCurve: buildEquityCurve(trades, initialBalance),
+    equityCurve: buildEquityCurve(trades, initialBalance, startTimestamp),
   };
 }
