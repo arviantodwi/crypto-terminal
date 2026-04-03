@@ -98,6 +98,7 @@ export function useBacktest(
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusRef = useRef<BacktestStatus>('IDLE');
   const speedRef = useRef<SpeedLevel>(10);
+  const recentTradesRef = useRef<ExecutedTrade[]>([]);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -155,6 +156,12 @@ export function useBacktest(
       strategy.onTradeExecuted(trade);
     }
 
+    // Maintain a capped ring buffer of the 8 most recent trades
+    if (newTrades.length > 0) {
+      const combined = recentTradesRef.current.concat(newTrades);
+      recentTradesRef.current = combined.length > 8 ? combined.slice(-8) : combined;
+    }
+
     if (done) {
       statusRef.current = 'COMPLETE';
       stopInterval();
@@ -177,7 +184,7 @@ export function useBacktest(
       totalCandles: total,
       currentTimestamp: lastWindow ? new Date(lastWindow[2].open_time) : new Date(0),
       progress: total > 0 ? (processed / total) * 100 : 0,
-      trades: allTrades.slice(-8),
+      trades: recentTradesRef.current,
       metrics: calculateMetrics(allTrades, initialBalance),
     });
   }, [strategy, initialBalance, stopInterval]);
@@ -227,6 +234,7 @@ export function useBacktest(
   const restart = useCallback(() => {
     stopInterval();
     initEngine();
+    recentTradesRef.current = [];
     setState(buildInitialState(candles, initialBalance));
   }, [stopInterval, initEngine, candles, initialBalance]);
 
