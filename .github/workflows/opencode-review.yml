@@ -26,8 +26,8 @@ jobs:
 
       - name: Configure Git user
         run: |
-          git config user.name "opencode[bot]"
-          git config user.email "opencode-agent[bot]@users.noreply.github.com"
+          git config --global user.name "opencode[bot]"
+          git config --global user.email "opencode@sst.dev"
 
       - uses: anomalyco/opencode/github@latest
         env:
