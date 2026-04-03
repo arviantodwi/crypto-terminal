@@ -211,7 +211,7 @@ function bollingerBands(
       lower.push(null);
     } else {
       const mean = middle[i]!;
-      const variance = (windowSumSq / period) - (mean ** 2);
+      const variance = (windowSumSq / period - mean ** 2) * (period / (period - 1));
       const std = Math.sqrt(Math.abs(variance));
       upper.push(mean + stdDevMultiplier * std);
       lower.push(mean - stdDevMultiplier * std);
@@ -295,8 +295,8 @@ function detectPatterns(candles: Candle[]): Pattern[] {
     if (
       prev2.close < prev2.open &&
       prev1.close < prev1.open &&
-      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close > curr.open &&
+      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close > (prev2.open + prev2.close) / 2
     ) {
       patterns.push({ index: i, name: "Morning Star", direction: "bullish" });
@@ -306,8 +306,8 @@ function detectPatterns(candles: Candle[]): Pattern[] {
     if (
       prev2.close > prev2.open &&
       prev1.close > prev1.open &&
-      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close < curr.open &&
+      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close < (prev2.open + prev2.close) / 2
     ) {
       patterns.push({ index: i, name: "Evening Star", direction: "bearish" });
@@ -393,7 +393,7 @@ function computeStats(candles: Candle[]) {
     if (c > peak) peak = c;
     drawdowns.push(((peak - c) / peak) * 100);
   }
-  const maxDrawdown = -Math.min(...drawdowns);
+  const maxDrawdown = Math.max(...drawdowns);
 
   const volumes = candles.map((c) => c.volume);
   const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
