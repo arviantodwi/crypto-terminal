@@ -28,12 +28,28 @@ interface Pattern {
 }
 
 // ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
+
+const CONFIG = {
+  DRIFT: 0.0002,
+  VOLATILITY: 0.018,
+  VOLUME_SPIKE_PROBABILITY: 0.08,
+  BOX_MULLER_MIN: 1e-10,
+  DOJI_BODY_RATIO_THRESHOLD: 0.1,
+  STAR_BODY_RATIO_THRESHOLD: 0.3,
+  CANDLE_COUNT: 96,
+} as const;
+
+// ---------------------------------------------------------------------------
 // Pseudo-random number generator (seeded Mulberry32)
 // ---------------------------------------------------------------------------
 
+const MULBERRY_SEED_CONSTANT = 0x6d2b79f5;
+
 function mulberry32(seed: number) {
   return function (): number {
-    let t = (seed += 0x6d2b79f5);
+    let t = (seed += MULBERRY_SEED_CONSTANT);
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -56,8 +72,8 @@ function generateCandles(
   const now = Date.now();
   const intervalMs = 15 * 60 * 1000; // 15-minute candles
 
-  const drift = 0.0002; // slight upward bias
-  const volatility = 0.018;
+  const drift = CONFIG.DRIFT;
+  const volatility = CONFIG.VOLATILITY;
 
   for (let i = 0; i < count; i++) {
     const timestamp = now - (count - i) * intervalMs;
@@ -75,7 +91,7 @@ function generateCandles(
 
     // Volume: base + occasional spikes
     const baseVolume = 500 + rand() * 2000;
-    const spike = rand() < 0.08 ? rand() * 8000 : 0;
+    const spike = rand() < CONFIG.VOLUME_SPIKE_PROBABILITY ? rand() * 8000 : 0;
     const volume = baseVolume + spike;
 
     candles.push({ timestamp, open, high, low, close, volume });
@@ -87,7 +103,7 @@ function generateCandles(
 
 /** Box–Muller transform: uniform → standard normal */
 function boxMullerNormal(rand: () => number): number {
-  const u1 = Math.max(rand(), 1e-10);
+  const u1 = Math.max(rand(), CONFIG.BOX_MULLER_MIN);
   const u2 = rand();
   return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
 }
@@ -97,11 +113,21 @@ function boxMullerNormal(rand: () => number): number {
 // ---------------------------------------------------------------------------
 
 function sma(closes: number[], period: number): (number | null)[] {
-  return closes.map((_, i) => {
-    if (i < period - 1) return null;
-    const slice = closes.slice(i - period + 1, i + 1);
-    return slice.reduce((a, b) => a + b, 0) / period;
-  });
+  const result: (number | null)[] = [];
+  let windowSum = 0;
+
+  for (let i = 0; i < closes.length; i++) {
+    windowSum += closes[i];
+    if (i >= period) {
+      windowSum -= closes[i - period];
+    }
+    if (i < period - 1) {
+      result.push(null);
+    } else {
+      result.push(windowSum / period);
+    }
+  }
+  return result;
 }
 
 function ema(closes: number[], period: number): (number | null)[] {
@@ -117,8 +143,12 @@ function ema(closes: number[], period: number): (number | null)[] {
       prev = init;
       result.push(init);
     } else {
-      prev = closes[i] * k + prev! * (1 - k);
-      result.push(prev);
+      if (prev === null) {
+        result.push(null);
+      } else {
+        prev = closes[i] * k + prev * (1 - k);
+        result.push(prev);
+      }
     }
   }
   return result;
@@ -145,7 +175,7 @@ function rsi(closes: number[], period = 14): (number | null)[] {
 
   result.push(pushRsi());
 
-  for (let i = period + 1; i < closes.length; i++) {
+  for (let i = period; i < closes.length; i++) {
     const delta = closes[i] - closes[i - 1];
     const gain = Math.max(delta, 0);
     const loss = Math.max(-delta, 0);
@@ -165,20 +195,28 @@ function bollingerBands(
   const middle = sma(closes, period);
   const upper: (number | null)[] = [];
   const lower: (number | null)[] = [];
+  let windowSumSq = 0;
 
-  closes.forEach((_, i) => {
+  for (let i = 0; i < closes.length; i++) {
+    windowSumSq += closes[i] ** 2;
+    if (i >= period) {
+      windowSumSq -= closes[i - period] ** 2;
+    }
+
     if (i < period - 1) {
       upper.push(null);
       lower.push(null);
+    } else if (middle[i] === null) {
+      upper.push(null);
+      lower.push(null);
     } else {
-      const slice = closes.slice(i - period + 1, i + 1);
       const mean = middle[i]!;
-      const variance = slice.reduce((acc, v) => acc + (v - mean) ** 2, 0) / period;
-      const std = Math.sqrt(variance);
+      const variance = (windowSumSq / period) - (mean ** 2);
+      const std = Math.sqrt(Math.abs(variance));
       upper.push(mean + stdDevMultiplier * std);
       lower.push(mean - stdDevMultiplier * std);
     }
-  });
+  }
 
   return { upper, middle, lower };
 }
@@ -200,11 +238,13 @@ function macd(
   const macdValues = macdLine.filter((v): v is number => v !== null);
   const rawSignal = ema(macdValues, signal);
 
-  // Re-align signal to the original length
-  const offset = macdLine.findIndex((v) => v !== null);
-  const signalLine: (number | null)[] = Array(offset + signal - 1).fill(null);
-  rawSignal.forEach((v) => signalLine.push(v));
-  while (signalLine.length < closes.length) signalLine.push(null);
+  const firstValidMacdIdx = slow - 1;
+  const signalLine: (number | null)[] = Array(closes.length).fill(null);
+  for (let i = 0; i < rawSignal.length; i++) {
+    if (rawSignal[i] != null) {
+      signalLine[firstValidMacdIdx + i] = rawSignal[i];
+    }
+  }
 
   const histogram = closes.map((_, i) => {
     if (macdLine[i] == null || signalLine[i] == null) return null;
@@ -247,14 +287,14 @@ function detectPatterns(candles: Candle[]): Pattern[] {
     // Doji (open ≈ close, small body relative to range)
     const body = Math.abs(curr.close - curr.open);
     const range = curr.high - curr.low;
-    if (range > 0 && body / range < 0.1) {
+    if (range > 0 && body / range < CONFIG.DOJI_BODY_RATIO_THRESHOLD) {
       patterns.push({ index: i, name: "Doji", direction: "neutral" });
     }
 
     // Morning star (3-candle)
     if (
       prev2.close < prev2.open &&
-      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * 0.3 &&
+      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close > curr.open &&
       curr.close > (prev2.open + prev2.close) / 2
     ) {
@@ -264,7 +304,7 @@ function detectPatterns(candles: Candle[]): Pattern[] {
     // Evening star (3-candle)
     if (
       prev2.close > prev2.open &&
-      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * 0.3 &&
+      Math.abs(prev1.close - prev1.open) < (prev1.high - prev1.low) * CONFIG.STAR_BODY_RATIO_THRESHOLD &&
       curr.close < curr.open &&
       curr.close < (prev2.open + prev2.close) / 2
     ) {
@@ -349,7 +389,7 @@ function computeStats(candles: Candle[]) {
   let peak = closes[0];
   for (const c of closes) {
     if (c > peak) peak = c;
-    drawdowns.push(((c - peak) / peak) * 100);
+    drawdowns.push(((peak - c) / peak) * 100);
   }
   const maxDrawdown = Math.min(...drawdowns);
 
@@ -364,16 +404,14 @@ function computeStats(candles: Candle[]) {
 // ---------------------------------------------------------------------------
 
 function main() {
-  const symbols = [
+  const symbols: readonly { symbol: string; startPrice: number; seed: number }[] = [
     { symbol: "BTC/USDT", startPrice: 68_000, seed: 0xdeadbeef },
     { symbol: "ETH/USDT", startPrice: 3_500, seed: 0xcafebabe },
     { symbol: "SOL/USDT", startPrice: 160, seed: 0x12345678 },
   ];
 
-  const CANDLE_COUNT = 96; // 24h of 15-min candles
-
   for (const { symbol, startPrice, seed } of symbols) {
-    const candles = generateCandles(symbol, startPrice, CANDLE_COUNT, seed);
+    const candles = generateCandles(symbol, startPrice, CONFIG.CANDLE_COUNT, seed);
     const closes = candles.map((c) => c.close);
 
     const sma20 = sma(closes, 20);
@@ -440,7 +478,7 @@ function main() {
     }
 
     console.log(
-      `\n  Avg Volume / candle: ${stats.avgVolume.toFixed(0)} USDT  │  Candles: ${CANDLE_COUNT} × 15min`,
+      `\n  Avg Volume / candle: ${stats.avgVolume.toFixed(0)} USDT  │  Candles: ${CONFIG.CANDLE_COUNT} × 15min`,
     );
   }
 
