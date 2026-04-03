@@ -86,7 +86,7 @@ function saveResults(
   const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);
 
   const jsonPath = outputPath ?? `backtest-${safeStrategy}-${safeTimestamp}.json`;
-  const csvPath = jsonPath.replace(/\.json$/, '.csv');
+  const csvPath = jsonPath.replace(/\.json$/i, '') + '.csv';
 
   const payload = {
     metadata: {
