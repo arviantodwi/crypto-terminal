@@ -72,7 +72,7 @@ export function PatternDisplay({ candles, patternData, tradeSignal }: PatternDis
           />
           {patternData.upProbability !== undefined && (
             <KV
-              label="Postgres"
+              label="Probability"
               value={`${patternData.upProbability.toFixed(0)}% UP / ${patternData.downProbability?.toFixed(0) ?? '?'}% DOWN`}
             />
           )}
