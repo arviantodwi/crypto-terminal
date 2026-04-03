@@ -1,11 +1,3 @@
 {
-  "$schema": "https://opencode.ai/config.json",
-  "agent": {
-    "build": {
-      "model": "anthropic/claude-sonnet-4-6"
-    },
-    "plan": {
-      "model": "anthropic/claude-sonnet-4-5-20250929"
-    }
-  }
+  "$schema": "https://opencode.ai/config.json"
 }

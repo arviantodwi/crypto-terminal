@@ -1,0 +1,20 @@
+name: Configure Git for OpenCode
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        type: string
+        default: "opencode[bot]"
+      email:
+        type: string
+        default: "opencode-agent[bot]@users.noreply.github.com"
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Git user
+        run: |
+          git config user.name "${{ inputs.name }}"
+          git config user.email "${{ inputs.email }}"
