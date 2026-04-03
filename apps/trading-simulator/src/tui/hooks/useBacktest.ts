@@ -78,6 +78,7 @@ function buildInitialState(candles: OhlcCandle[], initialBalance: number): Backt
     progress: 0,
     trades: [],
     metrics: calculateMetrics([], initialBalance),
+    strategyErrorCount: 0,
   };
 }
 
@@ -99,6 +100,7 @@ export function useBacktest(
   const statusRef = useRef<BacktestStatus>('IDLE');
   const speedRef = useRef<SpeedLevel>(10);
   const recentTradesRef = useRef<ExecutedTrade[]>([]);
+  const strategyErrorCountRef = useRef<number>(0);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -145,6 +147,7 @@ export function useBacktest(
           signal = strategy.analyze(window);
         } catch {
           // Skip candle on strategy error — consistent with BacktestRunner behaviour
+          strategyErrorCountRef.current++;
         }
         if (signal) portfolio.openPosition(signal, c3.open_time);
       }
@@ -190,6 +193,7 @@ export function useBacktest(
       progress: total > 0 ? (processed / total) * 100 : 0,
       trades: recentTradesRef.current,
       metrics: calculateMetrics(allTrades, initialBalance),
+      strategyErrorCount: strategyErrorCountRef.current,
     });
   }, [strategy, initialBalance, stopInterval]);
 
@@ -239,6 +243,7 @@ export function useBacktest(
     stopInterval();
     initEngine();
     recentTradesRef.current = [];
+    strategyErrorCountRef.current = 0;
     setState(buildInitialState(candles, initialBalance));
   }, [stopInterval, initEngine, candles, initialBalance]);
 

@@ -43,6 +43,8 @@ export interface BacktestState {
   /** Last 8 completed trades */
   trades: ExecutedTrade[];
   metrics: PerformanceMetrics;
+  /** Number of candles where strategy.analyze() threw an exception */
+  strategyErrorCount: number;
 }
 
 // ── Props for the TUI App root component ─────────────────────────────────────
