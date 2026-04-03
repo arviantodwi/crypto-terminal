@@ -133,6 +133,17 @@ describe('render3CandleWindow — shared price range', () => {
     const lines = render3CandleWindow([low, mid, high], 10);
     expect(lines).toHaveLength(10);
   });
+
+  it('all three candles flat (globalHigh === globalLow) renders without throwing', () => {
+    const flat = makeCandle(100, 100, 100, 100);
+    expect(() => render3CandleWindow([flat, flat, flat], 10)).not.toThrow();
+    const lines = render3CandleWindow([flat, flat, flat], 10);
+    expect(lines).toHaveLength(10);
+    const expectedWidth = CANDLE_WIDTH * 3 + 2 * 2;
+    for (const line of lines) {
+      expect(line).toHaveLength(expectedWidth);
+    }
+  });
 });
 
 // ── formatPattern ─────────────────────────────────────────────────────────────
