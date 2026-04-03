@@ -19,6 +19,8 @@ export function formatTimestamp(date: Date): string {
 }
 
 export function formatNumber(value: number, decimals = 3): string {
+  if (Number.isNaN(value)) return 'NaN';
+  if (!Number.isFinite(value)) return value > 0 ? '∞' : '-∞';
   return value.toFixed(decimals);
 }
 
