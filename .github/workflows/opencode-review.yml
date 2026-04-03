@@ -32,10 +32,11 @@ jobs:
       - uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: opencode/minimax-m2.5-free
-          use_github_token: true
+          # use_github_token: true
+          share: false
           prompt: |
             Review this pull request:
             - Check for code quality issues
