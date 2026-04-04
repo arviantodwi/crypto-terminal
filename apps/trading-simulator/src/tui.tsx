@@ -59,6 +59,9 @@ const dummyStrategy: StrategyRunner = {
   onTradeExecuted(_trade: ExecutedTrade): void {
     // no-op
   },
+  reset(): void {
+    // no-op — dummy strategy has no internal state
+  },
 };
 
 // ── Main ──────────────────────────────────────────────────────────────────────

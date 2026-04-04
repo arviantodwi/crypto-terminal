@@ -241,11 +241,12 @@ export function useBacktest(
 
   const restart = useCallback(() => {
     stopInterval();
+    strategy.reset();
     initEngine();
     recentTradesRef.current = [];
     strategyErrorCountRef.current = 0;
     setState(buildInitialState(candles, initialBalance));
-  }, [stopInterval, initEngine, candles, initialBalance]);
+  }, [stopInterval, strategy, initEngine, candles, initialBalance]);
 
   const saveResults = useCallback(() => {
     const allTrades = portfolioRef.current?.getTrades() ?? [];
