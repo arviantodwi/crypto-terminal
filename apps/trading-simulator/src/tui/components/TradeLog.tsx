@@ -7,14 +7,14 @@ interface TradeLogProps {
 }
 
 const COL_WIDTHS = {
-  num:    4,
-  time:   11,
-  type:   6,
+  num:    6,
+  time:   16,
+  type:   5,
   entry:  12,
   sl:     12,
   tp:     12,
   exit:   12,
-  pnl:    9,
+  pnl:    7,
   result: 6,
 };
 
@@ -28,8 +28,11 @@ function HeaderRow() {
     <Box paddingX={1}>
       <Text bold color="gray">
         {pad('#',      COL_WIDTHS.num,    false)}
+        {'  '}
         {pad('Time',   COL_WIDTHS.time,   false)}
+        {'  '}
         {pad('Type',   COL_WIDTHS.type,   false)}
+        {'  '}
         {pad('Entry',  COL_WIDTHS.entry,  true)}
         {'  '}
         {pad('SL',     COL_WIDTHS.sl,     true)}
@@ -40,7 +43,7 @@ function HeaderRow() {
         {'  '}
         {pad('P&L',    COL_WIDTHS.pnl,    true)}
         {'  '}
-        {'Result'}
+        {pad('Result', COL_WIDTHS.result, false)}
       </Text>
     </Box>
   );
@@ -56,12 +59,13 @@ function TradeRow({ trade }: { trade: ExecutedTrade }) {
     <Box paddingX={1}>
       <Text>
         {pad(String(trade.id), COL_WIDTHS.num, false)}
+        {'  '}
         {pad(formatTimestamp(trade.entryTimestamp), COL_WIDTHS.time, false)}
-      </Text>
-      <Text color={directionColor}>
-        {pad(trade.direction, COL_WIDTHS.type, false)}
-      </Text>
-      <Text>
+        {'  '}
+        <Text color={directionColor}>
+          {pad(trade.direction, COL_WIDTHS.type, false)}
+        </Text>
+        {'  '}
         {pad(formatCurrency(trade.entryPrice), COL_WIDTHS.entry, true)}
         {'  '}
         {pad(formatCurrency(trade.slPrice),    COL_WIDTHS.sl,    true)}
@@ -70,13 +74,13 @@ function TradeRow({ trade }: { trade: ExecutedTrade }) {
         {'  '}
         {pad(formatCurrency(trade.exitPrice),  COL_WIDTHS.exit,  true)}
         {'  '}
-      </Text>
-      <Text color={pnlColor}>
-        {pad(pnlStr, COL_WIDTHS.pnl, true)}
-      </Text>
-      <Text>{'  '}</Text>
-      <Text color={isWin ? 'green' : 'red'}>
-        {isWin ? '✓ TP' : '✗ SL'}
+        <Text color={pnlColor}>
+          {pad(pnlStr, COL_WIDTHS.pnl, true)}
+        </Text>
+        {'  '}
+        <Text color={isWin ? 'green' : 'red'}>
+          {pad(isWin ? '✓ TP' : '✗ SL', COL_WIDTHS.result, false)}
+        </Text>
       </Text>
     </Box>
   );
