@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { classifyCandle } from '@crypto-terminal/trade-formula';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import type { OhlcCandle, ExecutedTrade, StrategyRunner, TradeSignal } from '../../engine/types.js';
 import { TimeMachine } from '../../engine/time-machine.js';
 import { Portfolio } from '../../engine/portfolio.js';
@@ -253,7 +253,11 @@ export function useBacktest(
     const metrics = calculateMetrics(allTrades, initialBalance);
     const timestamp = new Date().toISOString();
     const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);
-    const filename = `backtest-${strategy.name}-${safeTimestamp}.json`;
+    const exportDir = './export';
+    mkdirSync(exportDir, { recursive: true });
+    const basename = `${exportDir}/backtest-${strategy.name}-${safeTimestamp}`;
+
+    // JSON
     const payload = {
       metadata: {
         strategy: strategy.name,
@@ -278,7 +282,31 @@ export function useBacktest(
         averageHoldTime: metrics.averageHoldTime,
       },
     };
-    writeFileSync(filename, JSON.stringify(payload, null, 2));
+    writeFileSync(`${basename}.json`, JSON.stringify(payload, null, 2));
+
+    // CSV
+    const csvEscape = (v: string) =>
+      v.includes(',') || v.includes('"') || v.includes('\n') || /^[=+\-@]/.test(v)
+        ? `"${v.replace(/"/g, '""')}"`
+        : v;
+    const headers = ['id','entryTimestamp','exitTimestamp','direction','entryPrice','slPrice','tpPrice','exitPrice','exitReason','pnlPercent','pnlDollar','leverage'];
+    const rows = allTrades.map((t) =>
+      [
+        t.id,
+        t.entryTimestamp.toISOString(),
+        t.exitTimestamp.toISOString(),
+        t.direction,
+        t.entryPrice,
+        t.slPrice,
+        t.tpPrice,
+        t.exitPrice,
+        t.exitReason,
+        t.pnlPercent,
+        t.pnlDollar,
+        t.leverage,
+      ].map((v) => csvEscape(String(v))).join(','),
+    );
+    writeFileSync(`${basename}.csv`, [headers.join(','), ...rows].join('\n'));
   }, [strategy, initialBalance]);
 
   const setSpeed = useCallback(
