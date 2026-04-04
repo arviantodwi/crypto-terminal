@@ -34,12 +34,10 @@ function pnlColor(v: number) {
 }
 
 export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
-  const equityValues = metrics.equityCurve.map((p) => p.balance);
-
   // Fill 70% column minus PerformanceMetrics border (2) minus paddingX (2)
   const curveWidth = Math.max(10, Math.floor((process.stdout.columns ?? 80) * 0.7) - 4);
-  const curveHeight = 5;
-  const curveLines = renderEquityCurve(equityValues, curveWidth, curveHeight);
+  const curveHeight = 7;
+  const { rows: curveRows, xAxis } = renderEquityCurve(metrics.equityCurve, curveWidth, curveHeight);
   const profitFactorStr = isNaN(metrics.profitFactor)
     ? 'N/A'
     : metrics.profitFactor === Infinity
@@ -119,13 +117,15 @@ export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
       </Box>
 
       {/* P&L Curve */}
-      <Box flexDirection="column" paddingX={1} paddingY={0}>
-        <Text bold color="gray"> P&L CURVE</Text>
-        {curveLines.map((line, i) => (
-          <Text key={i} color={metrics.totalPnL >= 0 ? 'green' : 'red'}>
-            {line}
-          </Text>
+      <Box flexDirection="column" paddingX={1} paddingY={0} height={curveHeight + 2}>
+        <Text bold color="white"> P&L CURVE</Text>
+        {curveRows.map((row, i) => (
+          <Box key={i} flexDirection="row">
+            <Text color="gray">{row.label}</Text>
+            <Text color={metrics.totalPnL >= 0 ? 'green' : 'red'}>{row.line}</Text>
+          </Box>
         ))}
+        <Text color="gray">{xAxis}</Text>
       </Box>
     </Box>
   );

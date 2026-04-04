@@ -27,46 +27,98 @@ export function formatNumber(value: number, decimals = 3): string {
 
 // ── Equity curve ASCII chart ──────────────────────────────────────────────────
 
+export interface CurveRow { label: string; line: string; }
+export interface EquityCurveResult { rows: CurveRow[]; xAxis: string; }
+
 /**
- * Render a filled ASCII bar chart from a list of balance values.
+ * Render a filled bar chart with a ▀ top-edge indicator from equity curve points.
  *
- * Returns an array of strings, one per row (top to bottom).
- * Each string is exactly `width` characters wide.
+ * Each column is filled with █ from the bottom up to the normalized value,
+ * with ▀ placed at the top cell to suggest a continuous line.
+ * Returns labeled rows (Y-axis % label + chart line) and an X-axis date string.
  */
-export function renderEquityCurve(values: number[], width: number, height: number): string[] {
-  if (values.length === 0 || width === 0 || height === 0) {
-    return Array(height).fill(' '.repeat(width));
+export function renderEquityCurve(
+  points: { timestamp: Date; balance: number }[],
+  width: number,
+  height: number,
+): EquityCurveResult {
+  const empty = (w: number) => ' '.repeat(Math.max(0, w));
+
+  if (points.length < 2 || width <= 0 || height <= 0) {
+    const rows = Array.from({ length: height }, () => ({ label: '  ', line: empty(width) }));
+    return { rows, xAxis: empty(width) };
   }
 
-  const min = values.reduce((a, b) => (b < a ? b : a), values[0]!);
-  const max = values.reduce((a, b) => (b > a ? b : a), values[0]!);
-  const range = max - min;
+  const initialBalance = points[0]!.balance;
+  const balances = points.map((p) => p.balance);
+  const minBal = Math.min(...balances);
+  const maxBal = Math.max(...balances);
+  const range = maxBal - minBal;
 
-  // Sample values to fit width
-  const sampled: number[] = [];
-  for (let i = 0; i < width; i++) {
-    const idx = Math.floor((i / width) * values.length);
-    sampled.push(values[Math.min(idx, values.length - 1)]!);
-  }
+  // Y-axis: one label per row (top → bottom maps maxPct → minPct)
+  const toPct = (b: number) => ((b - initialBalance) / initialBalance) * 100;
+  const minPct = toPct(minBal);
+  const maxPct = toPct(maxBal);
 
-  // Normalize each sample to a row index (0 = bottom, height-1 = top)
-  const normalized = sampled.map((v) =>
-    range > 0
-      ? Math.round(((v - min) / range) * (height - 1))
-      : Math.floor(height / 2),
-  );
+  const yLabels: string[] = Array.from({ length: height }, (_, i) => {
+    const pct = height === 1 ? maxPct : maxPct - ((maxPct - minPct) * i) / (height - 1);
+    const sign = pct >= 0 ? '+' : '';
+    return `${sign}${pct.toFixed(0)}%`;
+  });
 
-  // Build rows from top (height-1) to bottom (0)
-  const rows: string[] = [];
-  for (let row = height - 1; row >= 0; row--) {
-    let line = '';
-    for (let col = 0; col < width; col++) {
-      line += (normalized[col] ?? 0) >= row ? '█' : ' ';
+  const yAxisWidth = Math.max(...yLabels.map((l) => l.length)) + 1;
+  const chartWidth = Math.max(1, width - yAxisWidth);
+
+  // Sample balances to chartWidth columns
+  const sampled: number[] = Array.from({ length: chartWidth }, (_, i) => {
+    const idx = Math.min(Math.floor((i / chartWidth) * points.length), points.length - 1);
+    return points[idx]!.balance;
+  });
+
+  // Normalize to row index (0 = bottom, height-1 = top)
+  const norm = (b: number) =>
+    range > 0 ? Math.round(((b - minBal) / range) * (height - 1)) : Math.floor(height / 2);
+  const normalized = sampled.map(norm);
+
+  // Build grid: filled bar with ▀ at top edge
+  // grid rows: 0 = top display row, height-1 = bottom display row
+  const grid: string[][] = Array.from({ length: height }, () => Array(chartWidth).fill(' '));
+
+  for (let col = 0; col < chartWidth; col++) {
+    const cur = normalized[col]!;
+    const topRow = height - 1 - cur; // grid row index for the top of this column
+    // Fill body rows below top with █
+    for (let r = topRow + 1; r < height; r++) {
+      grid[r]![col] = '█';
     }
-    rows.push(line);
+    // Top edge gets ▄ (lower half block): dark top, colored bottom — connects to █ below
+    grid[topRow]![col] = '▄';
   }
 
-  return rows;
+  const rows: CurveRow[] = grid.map((rowCells, i) => ({
+    label: yLabels[i]!.padStart(yAxisWidth),
+    line:  rowCells.join(''),
+  }));
+
+  // X-axis: 5 evenly spaced date labels
+  const timestamps = points.map((p) => p.timestamp);
+  const labelCount = 5;
+  const xAxisChars = Array(chartWidth).fill(' ');
+  for (let li = 0; li < labelCount; li++) {
+    const col = Math.floor((li / (labelCount - 1)) * (chartWidth - 1));
+    const ptIdx = Math.min(Math.floor((col / chartWidth) * points.length), points.length - 1);
+    const d = timestamps[ptIdx]!;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const label = `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}`;
+    const startCol = li === labelCount - 1 ? chartWidth - label.length : col;
+    for (let c = 0; c < label.length && startCol + c < chartWidth; c++) {
+      xAxisChars[startCol + c] = label[c];
+    }
+  }
+
+  const xAxis = ' '.repeat(yAxisWidth) + xAxisChars.join('');
+
+  return { rows, xAxis };
 }
 
 // ── Relative elapsed time ─────────────────────────────────────────────────────
