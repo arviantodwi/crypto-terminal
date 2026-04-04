@@ -76,7 +76,7 @@ export class Portfolio {
       side: signal.direction,
       leverage: signal.leverage,
       dollarRisk: signal.dollarRisk,
-      entryTimestamp: new Date(entryTimestamp),
+      entryTimestamp: new Date(entryTimestamp * 1000),
       metadata: signal.metadata,
     };
   }
@@ -137,7 +137,7 @@ export class Portfolio {
     const trade: ExecutedTrade = {
       id: ++this.tradeIdCounter,
       entryTimestamp,
-      exitTimestamp: new Date(exitTimestamp),
+      exitTimestamp: new Date(exitTimestamp * 1000),
       direction: side,
       entryPrice,
       slPrice,

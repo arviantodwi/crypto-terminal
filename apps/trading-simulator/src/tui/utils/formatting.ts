@@ -121,6 +121,20 @@ export function formatRelativeTime(candlesProcessed: number, timeframe: string):
   return parts.join(' ');
 }
 
+// ── Hold time formatting ──────────────────────────────────────────────────────
+
+/**
+ * Format an average hold time (in fractional hours) as a human-readable string.
+ * Examples: "24m", "1h 12m", "2h 00m"
+ */
+export function formatHoldTime(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${String(m).padStart(2, '0')}m`;
+}
+
 // ── Speed level label ─────────────────────────────────────────────────────────
 
 export function formatSpeed(speed: number): string {

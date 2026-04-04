@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Box, Text } from 'ink';
 import type { PerformanceMetrics } from '../../shared/metrics.js';
-import { formatPercent, formatNumber, renderEquityCurve } from '../utils/formatting.js';
+import { formatPercent, formatNumber, formatHoldTime, renderEquityCurve } from '../utils/formatting.js';
 
 interface PerformanceMetricsProps {
   metrics: PerformanceMetrics;
@@ -111,7 +111,7 @@ export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
           />
           <MetricRow
             label="Avg Hold Time"
-            value={`${formatNumber(metrics.averageHoldTime, 1)}h`}
+            value={formatHoldTime(metrics.averageHoldTime)}
           />
         </SubPanel>
       </Box>
