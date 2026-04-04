@@ -9,13 +9,14 @@ export function formatPercent(value: number): string {
   return `${sign}${value.toFixed(2)}%`;
 }
 
-/** "MM-DD HH:mm" */
+/** "YYYY-MM-DD HH:mm" */
 export function formatTimestamp(date: Date): string {
+  const yyyy = String(date.getFullYear());
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
   const hh = String(date.getHours()).padStart(2, '0');
   const min = String(date.getMinutes()).padStart(2, '0');
-  return `${mm}-${dd} ${hh}:${min}`;
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
 export function formatNumber(value: number, decimals = 3): string {
@@ -66,6 +67,58 @@ export function renderEquityCurve(values: number[], width: number, height: numbe
   }
 
   return rows;
+}
+
+// ── Relative elapsed time ─────────────────────────────────────────────────────
+
+/**
+ * Parse a timeframe string like "5m", "1h", "4h", "1d" into minutes.
+ * Returns 0 if the format is unrecognised.
+ */
+function timeframeToMinutes(timeframe: string): number {
+  const match = timeframe.match(/^(\d+)([mhd])$/);
+  if (!match) return 0;
+  const n = parseInt(match[1]!, 10);
+  switch (match[2]) {
+    case 'm': return n;
+    case 'h': return n * 60;
+    case 'd': return n * 60 * 24;
+    default:  return 0;
+  }
+}
+
+/**
+ * Format total elapsed minutes as a human-readable relative duration.
+ * Examples: "5m", "59m", "1h 43m", "1d 13h 9m", "1mo 9d 8h 11m", "1y 4mo 12d 19h 3m"
+ */
+export function formatRelativeTime(candlesProcessed: number, timeframe: string): string {
+  const totalMinutes = candlesProcessed * timeframeToMinutes(timeframe);
+  if (totalMinutes <= 0) return '—';
+
+  const MINS_IN_YEAR  = 60 * 24 * 365;
+  const MINS_IN_MONTH = 60 * 24 * 30;
+  const MINS_IN_DAY   = 60 * 24;
+  const MINS_IN_HOUR  = 60;
+
+  let remaining = Math.floor(totalMinutes);
+  const years  = Math.floor(remaining / MINS_IN_YEAR);  remaining %= MINS_IN_YEAR;
+  const months = Math.floor(remaining / MINS_IN_MONTH); remaining %= MINS_IN_MONTH;
+  const days   = Math.floor(remaining / MINS_IN_DAY);   remaining %= MINS_IN_DAY;
+  const hours  = Math.floor(remaining / MINS_IN_HOUR);  remaining %= MINS_IN_HOUR;
+  const mins   = remaining;
+
+  const hh  = String(hours).padStart(2, '0');
+  const mm  = String(mins).padStart(2, '0');
+
+  const parts: string[] = [];
+  if (years)  parts.push(`${years}y`);
+  if (months) parts.push(`${months}mo`);
+  if (days)   parts.push(`${days}d`);
+  if (hours || parts.length > 0) parts.push(`${hh}h`);
+  if (mins  || parts.length > 0) parts.push(`${mm}m`);
+  if (parts.length === 0) parts.push('00m');
+
+  return parts.join(' ');
 }
 
 // ── Speed level label ─────────────────────────────────────────────────────────

@@ -189,7 +189,7 @@ export function useBacktest(
       currentBalance: portfolio.getBalance(),
       candlesProcessed: processed,
       totalCandles: total,
-      currentTimestamp: lastWindow ? new Date(lastWindow[2].open_time) : new Date(0),
+      currentTimestamp: lastWindow ? new Date(lastWindow[2].open_time * 1000) : new Date(0),
       progress: total > 0 ? (processed / total) * 100 : 0,
       trades: recentTradesRef.current,
       metrics: calculateMetrics(allTrades, initialBalance),

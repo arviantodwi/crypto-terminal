@@ -69,6 +69,7 @@ export function App({
             currentTimestamp={state.currentTimestamp}
             candlesProcessed={state.candlesProcessed}
             totalCandles={state.totalCandles}
+            timeframe={timeframe}
           />
           <PerformanceMetrics metrics={state.metrics} />
           <TradeLog trades={state.trades} />

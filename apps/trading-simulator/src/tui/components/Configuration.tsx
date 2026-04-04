@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import { formatCurrency, formatPercent, formatTimestamp } from '../utils/formatting.js';
+import { formatCurrency, formatPercent, formatTimestamp, formatRelativeTime } from '../utils/formatting.js';
 
 interface ConfigurationProps {
   initialBalance: number;
@@ -9,6 +9,7 @@ interface ConfigurationProps {
   currentTimestamp: Date;
   candlesProcessed: number;
   totalCandles: number;
+  timeframe: string;
 }
 
 function Row({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
@@ -28,6 +29,7 @@ export function Configuration({
   currentTimestamp,
   candlesProcessed,
   totalCandles,
+  timeframe,
 }: ConfigurationProps) {
   const balanceDiff = currentBalance - initialBalance;
   const balanceColor = balanceDiff >= 0 ? 'green' : 'red';
@@ -54,6 +56,10 @@ export function Configuration({
       <Row
         label="Current Time"
         value={timestampValid ? formatTimestamp(currentTimestamp) : '—'}
+      />
+      <Row
+        label="Elapsed"
+        value={candlesProcessed > 0 ? formatRelativeTime(candlesProcessed, timeframe) : '—'}
       />
       <Row
         label="Candles"
