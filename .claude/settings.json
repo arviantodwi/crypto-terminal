@@ -3,6 +3,7 @@
     "allow": [
       "Bash(/Users/arvi/Repos/me/crypto-terminal/apps/binance-stream/.venv/bin/python --version)",
       "Bash(gh issue:*)",
+      "Bash(ls -la*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm lint:fix)",
