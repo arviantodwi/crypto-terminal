@@ -9,8 +9,10 @@ interface PerformanceMetricsProps {
 
 function MetricRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
-    <Box justifyContent="space-between" paddingX={1}>
-      <Text color="gray">{label}</Text>
+    <Box paddingX={1}>
+      <Box flexGrow={1}>
+        <Text color="gray">{label}</Text>
+      </Box>
       <Text color={valueColor ?? 'white'}>{value}</Text>
     </Box>
   );
@@ -18,7 +20,7 @@ function MetricRow({ label, value, valueColor }: { label: string; value: string;
 
 function SubPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor="gray">
+    <Box flexDirection="column" flexGrow={1} flexBasis={0} flexShrink={1} borderStyle="single" borderColor="gray">
       <Box paddingX={1}>
         <Text bold color="yellow"> {title}</Text>
       </Box>
