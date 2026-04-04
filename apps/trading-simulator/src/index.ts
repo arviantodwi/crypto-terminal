@@ -28,6 +28,7 @@ function hasFlag(flag: string): boolean {
 const strategyArg = getArg('--strategy=') ?? 'dummy';
 const balanceArg = getArg('--balance=');
 const riskArg = getArg('--risk=');
+const tpArg = getArg('--tp-multiplier=');
 const outputArg = getArg('--output=');
 const headless = hasFlag('--headless');
 const haltOnError = hasFlag('--halt-on-error');
@@ -50,6 +51,18 @@ const riskPct = (() => {
     const v = Number(riskArg);
     if (isNaN(v) || v <= 0 || v > 100) {
       console.error(`[cli] --risk must be between 0 and 100, got: ${riskArg}`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return undefined; // use strategy default
+})();
+
+const tpMultiplier = (() => {
+  if (tpArg !== undefined) {
+    const v = Number(tpArg);
+    if (isNaN(v) || v <= 0) {
+      console.error(`[cli] --tp-multiplier must be a positive number, got: ${tpArg}`);
       process.exit(1);
     }
     return v;
@@ -155,6 +168,7 @@ async function main() {
           timeframe: config.timeframe,
           initialBalance,
           ...(riskPct !== undefined && { riskPct }),
+          ...(tpMultiplier !== undefined && { tpMultiplier }),
         });
         log.info({ strategy: strategyArg }, '[cli] Strategy loaded');
       } catch (err) {
