@@ -163,10 +163,10 @@ export function useBacktest(
       strategy.onTradeExecuted(trade);
     }
 
-    // Maintain a capped ring buffer of the 8 most recent trades
+    // Maintain a capped ring buffer of the 10 most recent trades
     if (newTrades.length > 0) {
       const combined = recentTradesRef.current.concat(newTrades);
-      recentTradesRef.current = combined.length > 8 ? combined.slice(-8) : combined;
+      recentTradesRef.current = combined.length > 10 ? combined.slice(-10) : combined;
     }
 
     if (done) {

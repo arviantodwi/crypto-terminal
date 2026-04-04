@@ -36,8 +36,8 @@ function pnlColor(v: number) {
 export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
   const equityValues = metrics.equityCurve.map((p) => p.balance);
 
-  // P&L curve: 50 wide, 5 tall
-  const curveWidth = 50;
+  // Fill 70% column minus PerformanceMetrics border (2) minus paddingX (2)
+  const curveWidth = Math.max(10, Math.floor((process.stdout.columns ?? 80) * 0.7) - 4);
   const curveHeight = 5;
   const curveLines = renderEquityCurve(equityValues, curveWidth, curveHeight);
   const profitFactorStr = isNaN(metrics.profitFactor)
