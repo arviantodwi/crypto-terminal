@@ -26,6 +26,19 @@ const { Pool } = pg;
 
 const args = process.argv.slice(2);
 const strategyArg = args.find((a) => a.startsWith('--strategy='))?.split('=')[1] || 'dummy';
+const riskArg = args.find((a) => a.startsWith('--risk='))?.split('=')[1];
+
+const riskPct = (() => {
+  if (riskArg !== undefined) {
+    const v = Number(riskArg);
+    if (isNaN(v) || v <= 0 || v > 100) {
+      process.stderr.write(`[tui] --risk must be between 0 and 100, got: ${riskArg}\n`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return undefined; // use strategy default
+})();
 
 const VALID_STRATEGIES = ['dummy', ...KNOWN_STRATEGIES] as const;
 if (!VALID_STRATEGIES.includes(strategyArg as (typeof VALID_STRATEGIES)[number])) {
@@ -75,7 +88,7 @@ async function main() {
           instrument: config.instrument,
           timeframe: config.timeframe,
           initialBalance: config.initialBalance,
-          ...BASE_STRATEGY_CONFIG,
+          ...(riskPct !== undefined && { riskPct }),
         },
       );
     }
@@ -104,7 +117,7 @@ async function main() {
         instrument={config.instrument}
         timeframe={config.timeframe}
         initialBalance={config.initialBalance}
-        riskPercent={BASE_STRATEGY_CONFIG.riskPct}
+        riskPercent={riskPct ?? BASE_STRATEGY_CONFIG.riskPct}
         tpMultiplier={BASE_STRATEGY_CONFIG.tpMultiplier}
       />,
     );
