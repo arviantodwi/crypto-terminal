@@ -108,6 +108,9 @@ async function main() {
     // Close pool (TUI loop takes over from here — no more DB needed)
     await pool.end();
 
+    // Clear terminal (screen + scrollback, same as Cmd+K on macOS)
+    process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
+
     // Render TUI
     render(
       <App
