@@ -5,6 +5,7 @@ import type { OhlcCandle, ExecutedTrade, StrategyRunner, TradeSignal } from '../
 import { TimeMachine } from '../../engine/time-machine.js';
 import { Portfolio } from '../../engine/portfolio.js';
 import { calculateMetrics } from '../../shared/metrics.js';
+import { InMemoryTradeLog } from '../../shared/execution-log.js';
 import type { BacktestState, BacktestStatus, PatternAnalysisData, SpeedLevel } from '../types.js';
 
 // ── Speed → { intervalMs, batchSize } ────────────────────────────────────────
@@ -285,29 +286,12 @@ export function useBacktest(
     };
     writeFileSync(`${basename}.json`, JSON.stringify(payload, null, 2));
 
-    // CSV
-    const csvEscape = (v: string) =>
-      v.includes(',') || v.includes('"') || v.includes('\n') || /^[=+\-@]/.test(v)
-        ? `"${v.replace(/"/g, '""')}"`
-        : v;
-    const headers = ['id','entryTimestamp','exitTimestamp','direction','entryPrice','slPrice','tpPrice','exitPrice','exitReason','pnlPercent','pnlDollar','leverage'];
-    const rows = allTrades.map((t) =>
-      [
-        t.id,
-        t.entryTimestamp.toISOString(),
-        t.exitTimestamp.toISOString(),
-        t.direction,
-        t.entryPrice,
-        t.slPrice,
-        t.tpPrice,
-        t.exitPrice,
-        t.exitReason,
-        t.pnlPercent,
-        t.pnlDollar,
-        t.leverage,
-      ].map((v) => csvEscape(String(v))).join(','),
-    );
-    writeFileSync(`${basename}.csv`, [headers.join(','), ...rows].join('\n'));
+    // CSV via shared InMemoryTradeLog
+    const tradeLog = new InMemoryTradeLog();
+    for (const trade of allTrades) {
+      tradeLog.logTrade(trade, strategy.name, strategy.version);
+    }
+    tradeLog.exportToCSV(`${basename}.csv`);
   }, [strategy, initialBalance]);
 
   const setSpeed = useCallback(
