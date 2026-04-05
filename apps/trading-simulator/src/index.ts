@@ -8,7 +8,7 @@ import { BacktestRunner } from './engine/backtest-runner.js';
 import type { ExecutedTrade, OhlcCandle, StrategyRunner, TradeSignal } from './engine/types.js';
 import { calculateMetrics } from './shared/metrics.js';
 import { InMemoryTradeLog } from './shared/execution-log.js';
-import { loadStrategy } from './strategies/loader.js';
+import { loadStrategy, KNOWN_STRATEGIES } from './strategies/loader.js';
 
 const log = pino({ level: config.logLevel });
 const { Pool } = pg;
@@ -26,6 +26,11 @@ function hasFlag(flag: string): boolean {
 }
 
 const strategyArg = getArg('--strategy=') ?? 'dummy';
+const VALID_STRATEGIES = ['dummy', ...KNOWN_STRATEGIES] as const;
+if (!VALID_STRATEGIES.includes(strategyArg as (typeof VALID_STRATEGIES)[number])) {
+  console.error(`[cli] Unknown strategy: "${strategyArg}". Valid strategies: ${VALID_STRATEGIES.join(', ')}`);
+  process.exit(1);
+}
 const balanceArg = getArg('--balance=');
 const riskArg = getArg('--risk=');
 const tpArg = getArg('--tp-multiplier=');
@@ -79,6 +84,9 @@ const dummyStrategy: StrategyRunner = {
     return null;
   },
   onTradeExecuted(_trade: ExecutedTrade): void {
+    // no-op
+  },
+  reset(): void {
     // no-op
   },
 };
@@ -163,7 +171,7 @@ async function main() {
       strategy = dummyStrategy;
     } else {
       try {
-        strategy = await loadStrategy(strategyArg, db, {
+        strategy = await loadStrategy(strategyArg as Parameters<typeof loadStrategy>[0], db, {
           instrument: config.instrument,
           timeframe: config.timeframe,
           initialBalance,

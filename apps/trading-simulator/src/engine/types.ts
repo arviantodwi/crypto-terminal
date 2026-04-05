@@ -39,6 +39,7 @@ export interface ExecutedTrade {
   tpPrice: number;
   exitPrice: number;
   exitReason: 'SL' | 'TP';
+  dollarRisk: number;
   pnlPercent: number;
   pnlDollar: number;
   leverage: number;

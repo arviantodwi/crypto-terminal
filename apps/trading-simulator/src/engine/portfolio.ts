@@ -144,6 +144,7 @@ export class Portfolio {
       tpPrice,
       exitPrice,
       exitReason,
+      dollarRisk,
       pnlPercent,
       pnlDollar,
       leverage,
