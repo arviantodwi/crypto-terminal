@@ -26,8 +26,21 @@ const { Pool } = pg;
 
 const args = process.argv.slice(2);
 const strategyArg = args.find((a) => a.startsWith('--strategy='))?.split('=')[1] || 'dummy';
+const balanceArg = args.find((a) => a.startsWith('--balance='))?.split('=')[1];
 const riskArg = args.find((a) => a.startsWith('--risk='))?.split('=')[1];
 const tpArg = args.find((a) => a.startsWith('--tp-multiplier='))?.split('=')[1];
+
+const initialBalance = (() => {
+  if (balanceArg !== undefined) {
+    const v = Number(balanceArg);
+    if (isNaN(v) || v <= 0) {
+      process.stderr.write(`[tui] --balance must be a positive number, got: ${balanceArg}\n`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return config.initialBalance;
+})();
 
 const riskPct = (() => {
   if (riskArg !== undefined) {
@@ -103,7 +116,7 @@ async function main() {
         {
           instrument: config.instrument,
           timeframe: config.timeframe,
-          initialBalance: config.initialBalance,
+          initialBalance,
           ...(riskPct !== undefined && { riskPct }),
           ...(tpMultiplier !== undefined && { tpMultiplier }),
         },
@@ -136,7 +149,7 @@ async function main() {
         strategyName={strategy.name}
         instrument={config.instrument}
         timeframe={config.timeframe}
-        initialBalance={config.initialBalance}
+        initialBalance={initialBalance}
         riskPercent={riskPct ?? BASE_STRATEGY_CONFIG.riskPct}
         tpMultiplier={tpMultiplier ?? BASE_STRATEGY_CONFIG.tpMultiplier}
       />,
