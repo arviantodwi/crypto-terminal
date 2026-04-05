@@ -36,6 +36,7 @@ function makeTrade(
     tpPrice: 104,
     exitPrice: pnlPercent >= 0 ? 104 : 98,
     exitReason: pnlPercent >= 0 ? 'TP' : 'SL',
+    dollarRisk: 10,
     pnlPercent,
     pnlDollar,
     leverage: 5,
@@ -150,9 +151,9 @@ describe('profitFactor', () => {
 });
 
 describe('expectedValue', () => {
-  it('returns average pnlPercent', () => {
-    // (3 - 1 + 2 - 2 + 5) / 5 = 7/5 = 1.4
-    expect(expectedValue(SAMPLE_TRADES)).toBeCloseTo(1.4, 5);
+  it('returns average pnlDollar', () => {
+    // (30 - 10 + 20 - 20 + 50) / 5 = 70/5 = 14
+    expect(expectedValue(SAMPLE_TRADES)).toBeCloseTo(14, 5);
   });
 });
 

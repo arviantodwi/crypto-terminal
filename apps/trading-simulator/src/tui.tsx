@@ -26,6 +26,45 @@ const { Pool } = pg;
 
 const args = process.argv.slice(2);
 const strategyArg = args.find((a) => a.startsWith('--strategy='))?.split('=')[1] || 'dummy';
+const balanceArg = args.find((a) => a.startsWith('--balance='))?.split('=')[1];
+const riskArg = args.find((a) => a.startsWith('--risk='))?.split('=')[1];
+const tpArg = args.find((a) => a.startsWith('--tp-multiplier='))?.split('=')[1];
+
+const initialBalance = (() => {
+  if (balanceArg !== undefined) {
+    const v = Number(balanceArg);
+    if (isNaN(v) || v <= 0) {
+      process.stderr.write(`[tui] --balance must be a positive number, got: ${balanceArg}\n`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return config.initialBalance;
+})();
+
+const riskPct = (() => {
+  if (riskArg !== undefined) {
+    const v = Number(riskArg);
+    if (isNaN(v) || v <= 0 || v > 100) {
+      process.stderr.write(`[tui] --risk must be between 0 and 100, got: ${riskArg}\n`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return undefined; // use strategy default
+})();
+
+const tpMultiplier = (() => {
+  if (tpArg !== undefined) {
+    const v = Number(tpArg);
+    if (isNaN(v) || v <= 0) {
+      process.stderr.write(`[tui] --tp-multiplier must be a positive number, got: ${tpArg}\n`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return undefined;
+})();
 
 const VALID_STRATEGIES = ['dummy', ...KNOWN_STRATEGIES] as const;
 if (!VALID_STRATEGIES.includes(strategyArg as (typeof VALID_STRATEGIES)[number])) {
@@ -45,6 +84,9 @@ const dummyStrategy: StrategyRunner = {
   },
   onTradeExecuted(_trade: ExecutedTrade): void {
     // no-op
+  },
+  reset(): void {
+    // no-op — dummy strategy has no internal state
   },
 };
 
@@ -74,8 +116,9 @@ async function main() {
         {
           instrument: config.instrument,
           timeframe: config.timeframe,
-          initialBalance: config.initialBalance,
-          ...BASE_STRATEGY_CONFIG,
+          initialBalance,
+          ...(riskPct !== undefined && { riskPct }),
+          ...(tpMultiplier !== undefined && { tpMultiplier }),
         },
       );
     }
@@ -95,6 +138,9 @@ async function main() {
     // Close pool (TUI loop takes over from here — no more DB needed)
     await pool.end();
 
+    // Clear terminal (screen + scrollback, same as Cmd+K on macOS)
+    process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
+
     // Render TUI
     render(
       <App
@@ -103,9 +149,9 @@ async function main() {
         strategyName={strategy.name}
         instrument={config.instrument}
         timeframe={config.timeframe}
-        initialBalance={config.initialBalance}
-        riskPercent={BASE_STRATEGY_CONFIG.riskPct}
-        tpMultiplier={BASE_STRATEGY_CONFIG.tpMultiplier}
+        initialBalance={initialBalance}
+        riskPercent={riskPct ?? BASE_STRATEGY_CONFIG.riskPct}
+        tpMultiplier={tpMultiplier ?? BASE_STRATEGY_CONFIG.tpMultiplier}
       />,
     );
   } catch (err) {

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Box, Text } from 'ink';
 import type { PerformanceMetrics } from '../../shared/metrics.js';
-import { formatPercent, formatNumber, renderEquityCurve } from '../utils/formatting.js';
+import { formatPercent, formatNumber, formatCurrency, formatHoldTime, renderEquityCurve } from '../utils/formatting.js';
 
 interface PerformanceMetricsProps {
   metrics: PerformanceMetrics;
@@ -9,8 +9,10 @@ interface PerformanceMetricsProps {
 
 function MetricRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
-    <Box justifyContent="space-between" paddingX={1}>
-      <Text color="gray">{label}</Text>
+    <Box paddingX={1}>
+      <Box flexGrow={1}>
+        <Text color="gray">{label}</Text>
+      </Box>
       <Text color={valueColor ?? 'white'}>{value}</Text>
     </Box>
   );
@@ -18,7 +20,7 @@ function MetricRow({ label, value, valueColor }: { label: string; value: string;
 
 function SubPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor="gray">
+    <Box flexDirection="column" flexGrow={1} flexBasis={0} flexShrink={1} borderStyle="single" borderColor="gray">
       <Box paddingX={1}>
         <Text bold color="yellow"> {title}</Text>
       </Box>
@@ -32,12 +34,10 @@ function pnlColor(v: number) {
 }
 
 export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
-  const equityValues = metrics.equityCurve.map((p) => p.balance);
-
-  // P&L curve: 50 wide, 5 tall
-  const curveWidth = 50;
-  const curveHeight = 5;
-  const curveLines = renderEquityCurve(equityValues, curveWidth, curveHeight);
+  // Fill 70% column minus PerformanceMetrics border (2) minus paddingX (2)
+  const curveWidth = Math.max(10, Math.floor((process.stdout.columns ?? 80) * 0.7) - 4);
+  const curveHeight = 7;
+  const { rows: curveRows, xAxis } = renderEquityCurve(metrics.equityCurve, curveWidth, curveHeight);
   const profitFactorStr = isNaN(metrics.profitFactor)
     ? 'N/A'
     : metrics.profitFactor === Infinity
@@ -82,7 +82,7 @@ export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
           <MetricRow label="Profit Factor" value={profitFactorStr} />
           <MetricRow
             label="Expected Value"
-            value={formatPercent(metrics.expectedValue)}
+            value={formatCurrency(metrics.expectedValue)}
             valueColor={pnlColor(metrics.expectedValue)}
           />
         </SubPanel>
@@ -111,19 +111,21 @@ export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
           />
           <MetricRow
             label="Avg Hold Time"
-            value={`${formatNumber(metrics.averageHoldTime, 1)}h`}
+            value={formatHoldTime(metrics.averageHoldTime)}
           />
         </SubPanel>
       </Box>
 
       {/* P&L Curve */}
-      <Box flexDirection="column" paddingX={1} paddingY={0}>
-        <Text bold color="gray"> P&L CURVE</Text>
-        {curveLines.map((line, i) => (
-          <Text key={i} color={metrics.totalPnL >= 0 ? 'green' : 'red'}>
-            {line}
-          </Text>
+      <Box flexDirection="column" paddingX={1} paddingY={0} height={curveHeight + 2}>
+        <Text bold color="white"> P&L CURVE</Text>
+        {curveRows.map((row, i) => (
+          <Box key={i} flexDirection="row">
+            <Text color="gray">{row.label}</Text>
+            <Text color={metrics.totalPnL >= 0 ? 'green' : 'red'}>{row.line}</Text>
+          </Box>
         ))}
+        <Text color="gray">{xAxis}</Text>
       </Box>
     </Box>
   );

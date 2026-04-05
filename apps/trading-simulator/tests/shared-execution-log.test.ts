@@ -17,6 +17,7 @@ function makeTrade(overrides: Partial<ExecutedTrade> = {}): ExecutedTrade {
     tpPrice: 104,
     exitPrice: 104,
     exitReason: 'TP',
+    dollarRisk: 10,
     pnlPercent: 2,
     pnlDollar: 20,
     leverage: 5,
@@ -141,6 +142,7 @@ describe('InMemoryTradeLog — exportToCSV', () => {
     expect(lines).toHaveLength(2); // header + 1 row
     expect(lines[0]).toContain('id');
     expect(lines[0]).toContain('strategyName');
+    expect(lines[0]).toContain('dollarRisk');
     expect(lines[1]).toContain(STRATEGY_A);
   });
 

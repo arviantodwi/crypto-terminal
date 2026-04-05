@@ -190,6 +190,7 @@ describe('checkStopLoss()', () => {
     p.checkStopLoss(makeCandle({ low: 96, open_time: 2000 }));
     const [trade] = p.getTrades();
     expect(trade!.exitReason).toBe('SL');
+    expect(trade!.dollarRisk).toBe(30);
     expect(trade!.pnlDollar).toBeCloseTo(-30, 5);
   });
 });
@@ -230,6 +231,7 @@ describe('checkTakeProfit()', () => {
     p.checkTakeProfit(makeCandle({ high: 110, open_time: 2000 }));
     const [trade] = p.getTrades();
     expect(trade!.exitReason).toBe('TP');
+    expect(trade!.dollarRisk).toBe(30);
     expect(trade!.pnlDollar).toBeCloseTo(60, 5);
   });
 });

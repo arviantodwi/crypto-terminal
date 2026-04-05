@@ -36,10 +36,12 @@ Run the full interactive terminal UI:
 pnpm tui
 ```
 
-Use a specific strategy:
+Use a specific strategy with custom settings:
 
 ```bash
 pnpm tui -- --strategy=pattern-based-v1
+pnpm tui -- --strategy=pattern-based-v1 --balance=5000
+pnpm tui -- --strategy=pattern-based-v1 --balance=5000 --risk=2 --tp-multiplier=1.5
 ```
 
 ### CLI Backtest (headless-friendly)
@@ -54,11 +56,11 @@ pnpm start -- --strategy=pattern-based-v1
 Override environment variables via CLI flags:
 
 ```bash
-# Set initial balance
-pnpm start -- --strategy=pattern-based-v1 --balance=5000
+# Set initial balance and risk
+pnpm start -- --strategy=pattern-based-v1 --balance=5000 --risk=2
 
-# Set risk percent per trade
-pnpm start -- --strategy=pattern-based-v1 --risk=2
+# Set take-profit multiplier
+pnpm start -- --strategy=pattern-based-v1 --tp-multiplier=1.5
 
 # Halt on first strategy error instead of skipping
 pnpm start -- --strategy=pattern-based-v1 --halt-on-error
@@ -86,11 +88,23 @@ pnpm start -- --strategy=pattern-based-v1 --output=run-2024-01-15.json
 
 ### CLI Flags Reference
 
+**TUI (`pnpm tui`)**
+
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--strategy=<name>` | Strategy to run | `dummy` |
 | `--balance=<number>` | Initial balance in USD | From `INITIAL_BALANCE` env |
 | `--risk=<number>` | Risk % per trade (0–100) | From strategy default |
+| `--tp-multiplier=<number>` | Take-profit multiplier (must be > 0) | From strategy default |
+
+**CLI (`pnpm start`)**
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--strategy=<name>` | Strategy to run | `dummy` |
+| `--balance=<number>` | Initial balance in USD | From `INITIAL_BALANCE` env |
+| `--risk=<number>` | Risk % per trade (0–100) | From strategy default |
+| `--tp-multiplier=<number>` | Take-profit multiplier (must be > 0) | From strategy default |
 | `--headless` | Run without TUI, auto-save on completion | `false` |
 | `--output=<path>` | Output JSON file path | Auto-generated filename |
 | `--halt-on-error` | Halt on first strategy error instead of skipping | `false` |
@@ -125,22 +139,34 @@ pnpm start -- --strategy=pattern-based-v1 --output=run-2024-01-15.json
 | **Win Rate** | % of trades that hit TP (denominator includes break-evens) |
 | **Total P&L** | Net P&L as % of initial balance |
 | **Max Drawdown** | Largest peak-to-trough equity decline (negative %) |
-| **Sharpe Ratio** | Annualized risk-adjusted return (5-min candle basis) |
+| **Sharpe Ratio** | Annualized risk-adjusted return, derived from actual trade frequency over the backtest period |
 | **Profit Factor** | Gross profit / gross loss (∞ = no losses) |
-| **Expected Value** | Average P&L per trade (%) |
+| **Expected Value** | Average P&L per trade in USD |
 | **Avg Win / Avg Loss** | Average winning / losing trade size (%) |
 | **Largest Win / Loss** | Best and worst single trades (%) |
 | **Avg Hold Time** | Average time between entry and exit (hours) |
 
 ### Trade Log
 
-Each trade records:
-- **ID** — sequential trade number
-- **Direction** — `LONG` or `SHORT`
-- **Entry / SL / TP / Exit** — price levels
-- **Exit Reason** — `SL` (stop-loss) or `TP` (take-profit)
-- **P&L** — in USD and as % of balance at close time
-- **Metadata** — strategy-specific data (pattern labels, formula outputs, etc.)
+Each row in the trade log records:
+
+| Column | Description |
+|--------|-------------|
+| `#` | Sequential trade ID |
+| `Time` | Entry timestamp |
+| `Type` | `LONG` or `SHORT` |
+| `Entry` | Entry price |
+| `SL` | Stop-loss price |
+| `TP` | Take-profit price |
+| `Exit` | Exit price |
+| `Risk $` | Dollar amount risked on the trade |
+| `P&L $` | Profit/loss in USD |
+| `P&L %` | Profit/loss as % of balance at close time |
+| `Result` | `✓ TP` (take-profit hit) or `✗ SL` (stop-loss hit) |
+
+### Position Sizing (Compounding)
+
+The strategy uses **compounding** — `dollarRisk` is calculated as a percentage of the current account balance, not the initial balance. As the account grows, position sizes increase; as it shrinks, they decrease.
 
 ### SL vs TP Priority
 
@@ -176,8 +202,8 @@ A `.csv` file is saved alongside the JSON. Columns:
 
 ```
 id, strategyName, strategyVersion, entryTimestamp, exitTimestamp, direction,
-entryPrice, slPrice, tpPrice, exitPrice, exitReason, pnlPercent, pnlDollar,
-leverage, metadata
+entryPrice, slPrice, tpPrice, exitPrice, exitReason, dollarRisk, pnlPercent,
+pnlDollar, leverage, metadata
 ```
 
 The CSV is safe to open in spreadsheet applications — formula injection characters (`=`, `+`, `-`, `@`) are quoted automatically.
@@ -277,7 +303,6 @@ Reads from the shared `crypto_terminal` PostgreSQL database:
 - **No commission/slippage modeling** — P&L is based on exact SL/TP prices
 - **Single open position** — cannot hold multiple positions simultaneously
 - **SL priority assumption** — when a candle spans both SL and TP, SL wins (conservative)
-- **Sharpe ratio fixed for 5m candles** — annualization factor assumes 288 candles/day
 
 ## Troubleshooting
 

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { classifyCandle } from '@crypto-terminal/trade-formula';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import type { OhlcCandle, ExecutedTrade, StrategyRunner, TradeSignal } from '../../engine/types.js';
 import { TimeMachine } from '../../engine/time-machine.js';
 import { Portfolio } from '../../engine/portfolio.js';
 import { calculateMetrics } from '../../shared/metrics.js';
+import { InMemoryTradeLog } from '../../shared/execution-log.js';
 import type { BacktestState, BacktestStatus, PatternAnalysisData, SpeedLevel } from '../types.js';
 
 // ── Speed → { intervalMs, batchSize } ────────────────────────────────────────
@@ -163,10 +164,10 @@ export function useBacktest(
       strategy.onTradeExecuted(trade);
     }
 
-    // Maintain a capped ring buffer of the 8 most recent trades
+    // Maintain a capped ring buffer of the 10 most recent trades
     if (newTrades.length > 0) {
       const combined = recentTradesRef.current.concat(newTrades);
-      recentTradesRef.current = combined.length > 8 ? combined.slice(-8) : combined;
+      recentTradesRef.current = combined.length > 10 ? combined.slice(-10) : combined;
     }
 
     if (done) {
@@ -189,7 +190,7 @@ export function useBacktest(
       currentBalance: portfolio.getBalance(),
       candlesProcessed: processed,
       totalCandles: total,
-      currentTimestamp: lastWindow ? new Date(lastWindow[2].open_time) : new Date(0),
+      currentTimestamp: lastWindow ? new Date(lastWindow[2].open_time * 1000) : new Date(0),
       progress: total > 0 ? (processed / total) * 100 : 0,
       trades: recentTradesRef.current,
       metrics: calculateMetrics(allTrades, initialBalance),
@@ -241,11 +242,12 @@ export function useBacktest(
 
   const restart = useCallback(() => {
     stopInterval();
+    strategy.reset();
     initEngine();
     recentTradesRef.current = [];
     strategyErrorCountRef.current = 0;
     setState(buildInitialState(candles, initialBalance));
-  }, [stopInterval, initEngine, candles, initialBalance]);
+  }, [stopInterval, strategy, initEngine, candles, initialBalance]);
 
   const saveResults = useCallback(() => {
     const allTrades = portfolioRef.current?.getTrades() ?? [];
@@ -253,7 +255,11 @@ export function useBacktest(
     const metrics = calculateMetrics(allTrades, initialBalance);
     const timestamp = new Date().toISOString();
     const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);
-    const filename = `backtest-${strategy.name}-${safeTimestamp}.json`;
+    const exportDir = './export';
+    mkdirSync(exportDir, { recursive: true });
+    const basename = `${exportDir}/backtest-${strategy.name}-${safeTimestamp}`;
+
+    // JSON
     const payload = {
       metadata: {
         strategy: strategy.name,
@@ -278,7 +284,14 @@ export function useBacktest(
         averageHoldTime: metrics.averageHoldTime,
       },
     };
-    writeFileSync(filename, JSON.stringify(payload, null, 2));
+    writeFileSync(`${basename}.json`, JSON.stringify(payload, null, 2));
+
+    // CSV via shared InMemoryTradeLog
+    const tradeLog = new InMemoryTradeLog();
+    for (const trade of allTrades) {
+      tradeLog.logTrade(trade, strategy.name, strategy.version);
+    }
+    tradeLog.exportToCSV(`${basename}.csv`);
   }, [strategy, initialBalance]);
 
   const setSpeed = useCallback(

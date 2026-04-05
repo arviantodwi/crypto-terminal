@@ -8,7 +8,7 @@ import { BacktestRunner } from './engine/backtest-runner.js';
 import type { ExecutedTrade, OhlcCandle, StrategyRunner, TradeSignal } from './engine/types.js';
 import { calculateMetrics } from './shared/metrics.js';
 import { InMemoryTradeLog } from './shared/execution-log.js';
-import { loadStrategy } from './strategies/loader.js';
+import { loadStrategy, KNOWN_STRATEGIES } from './strategies/loader.js';
 
 const log = pino({ level: config.logLevel });
 const { Pool } = pg;
@@ -26,8 +26,14 @@ function hasFlag(flag: string): boolean {
 }
 
 const strategyArg = getArg('--strategy=') ?? 'dummy';
+const VALID_STRATEGIES = ['dummy', ...KNOWN_STRATEGIES] as const;
+if (!VALID_STRATEGIES.includes(strategyArg as (typeof VALID_STRATEGIES)[number])) {
+  console.error(`[cli] Unknown strategy: "${strategyArg}". Valid strategies: ${VALID_STRATEGIES.join(', ')}`);
+  process.exit(1);
+}
 const balanceArg = getArg('--balance=');
 const riskArg = getArg('--risk=');
+const tpArg = getArg('--tp-multiplier=');
 const outputArg = getArg('--output=');
 const headless = hasFlag('--headless');
 const haltOnError = hasFlag('--halt-on-error');
@@ -57,6 +63,18 @@ const riskPct = (() => {
   return undefined; // use strategy default
 })();
 
+const tpMultiplier = (() => {
+  if (tpArg !== undefined) {
+    const v = Number(tpArg);
+    if (isNaN(v) || v <= 0) {
+      console.error(`[cli] --tp-multiplier must be a positive number, got: ${tpArg}`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return undefined; // use strategy default
+})();
+
 // ── Dummy strategy (no-op — always returns null) ──────────────────────────────
 
 const dummyStrategy: StrategyRunner = {
@@ -66,6 +84,9 @@ const dummyStrategy: StrategyRunner = {
     return null;
   },
   onTradeExecuted(_trade: ExecutedTrade): void {
+    // no-op
+  },
+  reset(): void {
     // no-op
   },
 };
@@ -150,11 +171,12 @@ async function main() {
       strategy = dummyStrategy;
     } else {
       try {
-        strategy = await loadStrategy(strategyArg, db, {
+        strategy = await loadStrategy(strategyArg as Parameters<typeof loadStrategy>[0], db, {
           instrument: config.instrument,
           timeframe: config.timeframe,
           initialBalance,
           ...(riskPct !== undefined && { riskPct }),
+          ...(tpMultiplier !== undefined && { tpMultiplier }),
         });
         log.info({ strategy: strategyArg }, '[cli] Strategy loaded');
       } catch (err) {

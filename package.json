@@ -11,6 +11,7 @@
     "start:candle-collector": "pnpm --filter candle-collector start",
     "dev:instrument-registry": "pnpm --filter instrument-registry dev",
     "start:instrument-registry": "pnpm --filter instrument-registry start",
+    "build:trade-formula": "pnpm --filter @crypto-terminal/trade-formula build && pnpm install && pnpm compute:probability-materializer",
     "build:web": "pnpm --filter web build",
     "start:web": "pnpm --filter web start",
     "lint:web": "pnpm --filter web lint",

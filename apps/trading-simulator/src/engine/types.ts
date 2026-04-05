@@ -39,6 +39,7 @@ export interface ExecutedTrade {
   tpPrice: number;
   exitPrice: number;
   exitReason: 'SL' | 'TP';
+  dollarRisk: number;
   pnlPercent: number;
   pnlDollar: number;
   leverage: number;
@@ -57,6 +58,8 @@ export interface StrategyRunner {
   analyze(candles: [OhlcCandle, OhlcCandle, OhlcCandle]): TradeSignal | null;
   /** Called after every completed trade so the strategy can update internal state. */
   onTradeExecuted(trade: ExecutedTrade): void;
+  /** Resets all internal state so the strategy can be re-used for a new backtest run. */
+  reset(): void;
 }
 
 // ── Backtest results ──────────────────────────────────────────────────────────

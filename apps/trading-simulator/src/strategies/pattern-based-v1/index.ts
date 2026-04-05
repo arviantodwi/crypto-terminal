@@ -50,4 +50,8 @@ export class PatternBasedV1 implements StrategyRunner {
   onTradeExecuted(trade: ExecutedTrade): void {
     this.currentBalance = Math.max(0, this.currentBalance + trade.pnlDollar);
   }
+
+  reset(): void {
+    this.currentBalance = this.config.initialBalance;
+  }
 }

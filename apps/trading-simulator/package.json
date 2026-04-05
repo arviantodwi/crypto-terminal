@@ -7,8 +7,8 @@
   "scripts": {
     "start": "tsx --env-file .env src/index.ts",
     "dev": "tsx --env-file .env --watch src/index.ts",
-    "tui": "tsx --env-file .env src/tui.tsx",
-    "tui:dummy": "tsx --env-file .env src/tui.tsx --strategy=dummy",
+    "tui": "TSX_DISABLE_CACHE=1 tsx --env-file .env src/tui.tsx",
+    "tui:dummy": "TSX_DISABLE_CACHE=1 tsx --env-file .env src/tui.tsx --strategy=dummy",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
