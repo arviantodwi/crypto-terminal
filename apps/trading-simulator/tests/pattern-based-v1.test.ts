@@ -51,9 +51,9 @@ const c3 = makeCandle(RAW.c3);
 const mockPatternProbability: PatternProbability = {
   instrument: 'BTCUSDT',
   timeframe: '5m',
-  c1_label: 'up_weak',
-  c2_label: 'up_weak',
-  c3_label: 'up_medium',
+  c1_label: 'up_strong',
+  c2_label: 'up_medium',
+  c3_label: 'up_strong',
   occurrences: 100,
   up_count: 73,
   down_count: 27,
@@ -111,14 +111,14 @@ describe('pattern-based-v1 analyzer — §12 worked example', () => {
     expect(signal!.metadata.directional_agreement).toBe(3);
   });
 
-  it('metadata captures conviction as Moderate (73%)', () => {
+  it('metadata captures conviction as Dominant (73%)', () => {
     const signal = analyzePattern([c1, c2, c3], mockPatternProbability, config, 1_000);
-    expect(signal!.metadata.conviction).toBe('Moderate');
+    expect(signal!.metadata.conviction).toBe('Dominant');
   });
 
   it('metadata captures candle pattern labels', () => {
     const signal = analyzePattern([c1, c2, c3], mockPatternProbability, config, 1_000);
-    expect(signal!.metadata.pattern).toEqual(['up_weak', 'up_weak', 'up_medium']);
+    expect(signal!.metadata.pattern).toEqual(['up_strong', 'up_medium', 'up_strong']);
   });
 
   it('metadata contains 5 group formulas for Trend route', () => {
@@ -128,20 +128,20 @@ describe('pattern-based-v1 analyzer — §12 worked example', () => {
     expect(formulas.map((f) => f.name)).toEqual(['T1', 'T2', 'T3', 'T4', 'T5']);
   });
 
-  it('selected SL formula is T2 (Trend + Moderate → 75th percentile)', () => {
+  it('selected SL formula is T3 (Trend + Dominant → 25th percentile)', () => {
     const signal = analyzePattern([c1, c2, c3], mockPatternProbability, config, 1_000);
-    expect(signal!.metadata.selected_formula).toBe('T2');
-    expect(signal!.metadata.percentile_rank).toBe(75);
+    expect(signal!.metadata.selected_formula).toBe('T3');
+    expect(signal!.metadata.percentile_rank).toBe(25);
   });
 
-  it('sl_pct matches T2 weighted average ≈ 0.514%', () => {
+  it('sl_pct matches T3 weighted average ≈ 0.356%', () => {
     const signal = analyzePattern([c1, c2, c3], mockPatternProbability, config, 1_000);
-    expect(signal!.metadata.sl_pct as number).toBeCloseTo(0.514, 3);
+    expect(signal!.metadata.sl_pct as number).toBeCloseTo(0.356, 2);
   });
 
-  it('leverage is 5x (riskPct=3, sl_pct≈0.514 → floor(3/0.514)=5)', () => {
+  it('leverage is 8x (riskPct=3, sl_pct≈0.356 → floor(3/0.356)=8)', () => {
     const signal = analyzePattern([c1, c2, c3], mockPatternProbability, config, 1_000);
-    expect(signal!.leverage).toBe(5);
+    expect(signal!.leverage).toBe(8);
   });
 });
 
@@ -172,17 +172,16 @@ describe('pattern-based-v1 analyzer — null cases', () => {
     expect(signal).toBeNull();
   });
 
-  it('returns null for conflicted pattern at Moderate conviction (HIGH conviction overrides)', () => {
-    // up_probability < 75 (Moderate) with structural conflict
-    // Here directional_agreement=+3 but we force SHORT direction via high down_probability
-    const conflictedProb: PatternProbability = {
+  it('returns null when probability is below convictionThreshold (65% < 68)', () => {
+    // 65% is in the Dominant tier (≥ DOMINANT_MIN=60) but below the strategy's
+    // convictionThreshold=68 — the analyzer must skip this signal regardless of
+    // structural alignment.
+    const belowThresholdProb: PatternProbability = {
       ...mockPatternProbability,
       up_probability: 20,
-      down_probability: 73, // Moderate conviction for SHORT
+      down_probability: 65,
     };
-    // c1, c2, c3 are all bullish → directional_agreement=+3 → structural=LONG
-    // Postgres says SHORT → conflict → Moderate + conflict = Conflicted → null
-    const signal = analyzePattern([c1, c2, c3], conflictedProb, config, 1_000);
+    const signal = analyzePattern([c1, c2, c3], belowThresholdProb, config, 1_000);
     expect(signal).toBeNull();
   });
 
@@ -203,7 +202,7 @@ describe('pattern-based-v1 analyzer — null cases', () => {
 describe('PatternBasedV1 strategy runner', () => {
   it('implements StrategyRunner interface correctly', () => {
     const patternCache = new Map([
-      ['up_weak:up_weak:up_medium', mockPatternProbability],
+      ['up_strong:up_medium:up_strong', mockPatternProbability],
     ]);
     const strategy = new PatternBasedV1(config, patternCache);
 
@@ -215,7 +214,7 @@ describe('PatternBasedV1 strategy runner', () => {
 
   it('analyze() returns a signal for a known pattern in the cache', () => {
     const patternCache = new Map([
-      ['up_weak:up_weak:up_medium', mockPatternProbability],
+      ['up_strong:up_medium:up_strong', mockPatternProbability],
     ]);
     const strategy = new PatternBasedV1(config, patternCache);
 
@@ -234,7 +233,7 @@ describe('PatternBasedV1 strategy runner', () => {
 
   it('balance updates via onTradeExecuted affect dollarRisk', () => {
     const patternCache = new Map([
-      ['up_weak:up_weak:up_medium', mockPatternProbability],
+      ['up_strong:up_medium:up_strong', mockPatternProbability],
     ]);
     const strategy = new PatternBasedV1(config, patternCache);
 
@@ -253,6 +252,7 @@ describe('PatternBasedV1 strategy runner', () => {
       tpPrice: signal1.tpPrice,
       exitPrice: signal1.tpPrice,
       exitReason: 'TP',
+      dollarRisk: signal1.dollarRisk,
       pnlPercent: 1.5,
       pnlDollar: 50,
       leverage: signal1.leverage,

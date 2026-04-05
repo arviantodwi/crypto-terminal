@@ -32,6 +32,7 @@ const nullStrategy: StrategyRunner = {
   version: '0.0.1',
   analyze: () => null,
   onTradeExecuted: () => {},
+  reset: () => {},
 };
 
 /** Creates a strategy that emits one LONG signal on the first analyze() call. */
@@ -55,6 +56,7 @@ function oneShotLongStrategy(entryPrice = 100, slDist = 3, tpDist = 6): Strategy
       };
     },
     onTradeExecuted: () => {},
+    reset: () => {},
   };
 }
 
@@ -214,6 +216,7 @@ describe('BacktestRunner — strategy error handling', () => {
         throw new Error('strategy boom');
       },
       onTradeExecuted: () => {},
+      reset: () => {},
     };
 
     const candles = makeCandles(5);
@@ -235,6 +238,7 @@ describe('BacktestRunner — strategy error handling', () => {
         throw new Error('strategy boom');
       },
       onTradeExecuted: () => {},
+      reset: () => {},
     };
 
     const candles = makeCandles(5);
@@ -256,6 +260,7 @@ describe('BacktestRunner — strategy error handling', () => {
         throw new Error('analyze failed');
       },
       onTradeExecuted: () => {},
+      reset: () => {},
     };
 
     const candles = makeCandles(4);
