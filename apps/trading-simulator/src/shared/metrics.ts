@@ -16,7 +16,7 @@ export interface PerformanceMetrics {
   maxDrawdown: number;
   sharpeRatio: number;
   profitFactor: number;
-  /** Average P&L per trade in percentage. */
+  /** Average P&L per trade in dollars. */
   expectedValue: number;
 
   /** Average winning trade P&L in percentage. */
@@ -32,14 +32,6 @@ export interface PerformanceMetrics {
 
   equityCurve: EquityPoint[];
 }
-
-// ── Annualization constant for 5-minute candles ───────────────────────────────
-
-// 288 candles per day × 365 days — used to annualize the per-trade Sharpe ratio.
-// IMPORTANT: This value is hardcoded for 5-minute candle intervals. If the
-// backtest runner processes candles of a different interval, update this
-// constant accordingly (e.g. 96 for 15-minute, 24 for 1-hour candles).
-const ANNUALIZATION_FACTOR = Math.sqrt(288 * 365);
 
 // ── Individual metric functions ───────────────────────────────────────────────
 
@@ -98,12 +90,12 @@ export function maxDrawdown(trades: ExecutedTrade[], initialBalance: number): nu
 /**
  * Annualized Sharpe ratio based on per-trade P&L percentages.
  *
- * Annualization factor assumes 5-minute candles (288 per day, 365 days/year).
- * If this function is called with trades from a different candle interval the
- * annualized result will be incorrect — either adjust `ANNUALIZATION_FACTOR`
- * at the top of this module or pass the result through without annualizing.
+ * Annualizes using the actual trade frequency derived from the backtest period
+ * (first entry → last exit), so the result is correct regardless of candle
+ * interval or how frequently the strategy trades.
  *
  * Returns 0 when fewer than 2 trades exist or standard deviation is 0.
+ * Returns the raw (un-annualized) Sharpe when the backtest duration is ≤ 0.
  *
  * @param riskFreeReturnPercent Per-trade risk-free return expressed as a
  *   percentage (e.g. `0.1` = 0.1% per trade), not an annualised rate.
@@ -114,13 +106,19 @@ export function sharpeRatio(trades: ExecutedTrade[], riskFreeReturnPercent = 0):
 
   const returns = trades.map((t) => t.pnlPercent);
   const avgReturn = returns.reduce((s, r) => s + r, 0) / returns.length;
-  const variance =
-    returns.reduce((s, r) => s + (r - avgReturn) ** 2, 0) / (returns.length - 1);
+  const variance = returns.reduce((s, r) => s + (r - avgReturn) ** 2, 0) / (returns.length - 1);
   const stdDev = Math.sqrt(variance);
 
   if (stdDev === 0) return 0;
 
-  return ((avgReturn - riskFreeReturnPercent) / stdDev) * ANNUALIZATION_FACTOR;
+  const rawSharpe = (avgReturn - riskFreeReturnPercent) / stdDev;
+
+  const durationYears =
+    (trades[trades.length - 1]!.exitTimestamp.getTime() - trades[0]!.entryTimestamp.getTime()) /
+    (365.25 * 24 * 3_600_000);
+  if (durationYears <= 0) return rawSharpe;
+
+  return rawSharpe * Math.sqrt(trades.length / durationYears);
 }
 
 /**
@@ -140,10 +138,10 @@ export function profitFactor(trades: ExecutedTrade[]): number {
   return grossProfit / grossLoss;
 }
 
-/** Average P&L per trade in percentage. Returns 0 for empty trade arrays. */
+/** Average P&L per trade in dollars. Returns 0 for empty trade arrays. */
 export function expectedValue(trades: ExecutedTrade[]): number {
   if (trades.length === 0) return 0;
-  return trades.reduce((s, t) => s + t.pnlPercent, 0) / trades.length;
+  return trades.reduce((s, t) => s + t.pnlDollar, 0) / trades.length;
 }
 
 /** Average winning trade P&L in percentage. Returns 0 when no wins exist. */

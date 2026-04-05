@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Box, Text } from 'ink';
 import type { PerformanceMetrics } from '../../shared/metrics.js';
-import { formatPercent, formatNumber, formatHoldTime, renderEquityCurve } from '../utils/formatting.js';
+import { formatPercent, formatNumber, formatCurrency, formatHoldTime, renderEquityCurve } from '../utils/formatting.js';
 
 interface PerformanceMetricsProps {
   metrics: PerformanceMetrics;
@@ -82,7 +82,7 @@ export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
           <MetricRow label="Profit Factor" value={profitFactorStr} />
           <MetricRow
             label="Expected Value"
-            value={formatPercent(metrics.expectedValue)}
+            value={formatCurrency(metrics.expectedValue)}
             valueColor={pnlColor(metrics.expectedValue)}
           />
         </SubPanel>
