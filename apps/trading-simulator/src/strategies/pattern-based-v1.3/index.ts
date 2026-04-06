@@ -10,10 +10,10 @@ import { analyzePattern } from './analyzer.js';
  * pattern-based-v1.3 strategy.
  *
  * Extends v1.2.1 with adaptive risk adjustment:
- *   - After 2 consecutive losses, reduce effective risk by 0.25% per additional
- *     consecutive loss (i.e. reduction kicks in on the 2nd loss and compounds
- *     if losses continue).
- *   - On the first winning trade, reset effective risk to config riskPct.
+ *   - Every 3rd consecutive loss reduces effective risk by 20% (floored at 1.5%),
+ *     then resets the consecutive loss counter.
+ *   - While in reduced-risk mode, streak PnL is accumulated. Risk resets to
+ *     config riskPct only once the streak PnL turns positive.
  *
  * The adaptive TP multiplier from v1.2.1 is retained unchanged:
  *   - If current multiplier > PF  → step down 3% of current multiplier
@@ -34,6 +34,7 @@ export class PatternBasedV13 implements StrategyRunner {
   private effectiveTpMultiplier: number;
   private effectiveRiskPct: number;
   private consecutiveLosses = 0;
+  private streakPnl = 0;
 
   constructor(
     private readonly config: PatternBasedV1Config,
@@ -69,17 +70,26 @@ export class PatternBasedV13 implements StrategyRunner {
 
     if (trade.pnlPercent > 0) {
       this.grossProfit += trade.pnlPercent;
-      // Win → reset both consecutive loss counter and risk
       this.consecutiveLosses = 0;
-      this.effectiveRiskPct = this.config.riskPct;
     } else if (trade.pnlPercent < 0) {
       this.grossLoss += Math.abs(trade.pnlPercent);
       this.consecutiveLosses++;
-      // Reduce risk starting from the 3rd consecutive loss
+      // Reduce risk on every 3rd consecutive loss, then reset the counter
       if (this.consecutiveLosses >= 3) {
-        // this.effectiveRiskPct = Math.max(1.5, this.effectiveRiskPct - 0.33);
         this.effectiveRiskPct = Math.max(1.5, this.effectiveRiskPct * 0.8);
-        this.consecutiveLosses = 0
+        this.consecutiveLosses = 0;
+        this.streakPnl = 0;
+      }
+    }
+
+    // While in reduced-risk mode, accumulate streak PnL. Once it turns
+    // positive the strategy has recovered — restore full risk.
+    if (this.effectiveRiskPct < this.config.riskPct) {
+      this.streakPnl += trade.pnlPercent;
+      if (this.streakPnl > 0) {
+        this.effectiveRiskPct = this.config.riskPct;
+        this.streakPnl = 0;
+        this.consecutiveLosses = 0;
       }
     }
 
@@ -112,5 +122,6 @@ export class PatternBasedV13 implements StrategyRunner {
     this.effectiveTpMultiplier = this.config.tpMultiplier;
     this.effectiveRiskPct = this.config.riskPct;
     this.consecutiveLosses = 0;
+    this.streakPnl = 0;
   }
 }
