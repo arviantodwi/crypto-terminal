@@ -47,6 +47,8 @@ export interface BacktestState {
   strategyErrorCount: number;
   /** Live TP multiplier — set when the strategy adapts it at runtime (e.g. v1.1), otherwise undefined. */
   effectiveTpMultiplier?: number;
+  /** Live risk % — set when the strategy adapts it at runtime (e.g. v1.3), otherwise undefined. */
+  effectiveRiskPct?: number;
 }
 
 // ── Props for the TUI App root component ─────────────────────────────────────

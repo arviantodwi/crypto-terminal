@@ -65,6 +65,7 @@ export function App({
             initialBalance={initialBalance}
             currentBalance={state.currentBalance}
             riskPercent={riskPercent}
+            effectiveRiskPct={state.effectiveRiskPct}
             tpMultiplier={state.effectiveTpMultiplier ?? tpMultiplier}
             currentTimestamp={state.currentTimestamp}
             candlesProcessed={state.candlesProcessed}
