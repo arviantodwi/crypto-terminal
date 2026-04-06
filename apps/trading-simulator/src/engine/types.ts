@@ -66,6 +66,12 @@ export interface StrategyRunner {
    * implement this so the TUI can reflect live changes.
    */
   getEffectiveTpMultiplier?(): number;
+  /**
+   * Returns the currently active risk percent.
+   * Strategies that adapt this value at runtime (e.g. pattern-based-v1.3)
+   * implement this so the TUI can reflect live changes.
+   */
+  getEffectiveRiskPct?(): number;
 }
 
 // ── Backtest results ──────────────────────────────────────────────────────────
