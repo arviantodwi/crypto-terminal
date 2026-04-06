@@ -60,6 +60,12 @@ export interface StrategyRunner {
   onTradeExecuted(trade: ExecutedTrade): void;
   /** Resets all internal state so the strategy can be re-used for a new backtest run. */
   reset(): void;
+  /**
+   * Returns the currently active TP multiplier.
+   * Strategies that adapt this value at runtime (e.g. pattern-based-v1.1)
+   * implement this so the TUI can reflect live changes.
+   */
+  getEffectiveTpMultiplier?(): number;
 }
 
 // ── Backtest results ──────────────────────────────────────────────────────────

@@ -195,6 +195,7 @@ export function useBacktest(
       trades: recentTradesRef.current,
       metrics: calculateMetrics(allTrades, initialBalance),
       strategyErrorCount: strategyErrorCountRef.current,
+      effectiveTpMultiplier: strategy.getEffectiveTpMultiplier?.(),
     });
   }, [strategy, initialBalance, stopInterval]);
 

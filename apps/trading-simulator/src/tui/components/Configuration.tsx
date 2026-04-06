@@ -52,7 +52,7 @@ export function Configuration({
         valueColor={balanceColor}
       />
       <Row label="Risk / Trade" value={formatPercent(riskPercent)} />
-      <Row label="TP Multiplier" value={`${tpMultiplier}x`} />
+      <Row label="TP Multiplier" value={`${tpMultiplier.toFixed(2)}x`} />
       <Row
         label="Current Time"
         value={timestampValid ? formatTimestamp(currentTimestamp) : '—'}

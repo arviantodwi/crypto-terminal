@@ -45,6 +45,8 @@ export interface BacktestState {
   metrics: PerformanceMetrics;
   /** Number of candles where strategy.analyze() threw an exception */
   strategyErrorCount: number;
+  /** Live TP multiplier — set when the strategy adapts it at runtime (e.g. v1.1), otherwise undefined. */
+  effectiveTpMultiplier?: number;
 }
 
 // ── Props for the TUI App root component ─────────────────────────────────────
