@@ -3,7 +3,7 @@ import type { BacktestStatus } from '../types.js';
 
 interface HeaderProps {
   strategy: string;
-  instrument: string;
+  instruments: string[];
   timeframe: string;
   status: BacktestStatus;
   progress: number;
@@ -23,7 +23,12 @@ const STATUS_LABELS: Record<BacktestStatus, string> = {
   COMPLETE: '✓ COMPLETE',
 };
 
-export function Header({ strategy, instrument, timeframe, status, progress }: HeaderProps) {
+function formatInstruments(instruments: string[]): string {
+  if (instruments.length <= 3) return instruments.join(', ');
+  return `${instruments.length} instruments`;
+}
+
+export function Header({ strategy, instruments, timeframe, status, progress }: HeaderProps) {
   const color = STATUS_COLORS[status];
   const label = STATUS_LABELS[status];
   const progressStr =
@@ -46,7 +51,7 @@ export function Header({ strategy, instrument, timeframe, status, progress }: He
           Strategy: <Text bold>{strategy}</Text>
         </Text>
         <Text color="white">
-          {instrument} {timeframe}
+          {formatInstruments(instruments)} {timeframe}
         </Text>
         <Text color={color}>
           {label}

@@ -11,10 +11,8 @@ import { PatternDisplay } from './components/PatternDisplay.js';
 import { Footer } from './components/Footer.js';
 
 export function App({
-  candles,
-  strategy,
+  instruments,
   strategyName,
-  instrument,
   timeframe,
   initialBalance,
   riskPercent,
@@ -32,7 +30,7 @@ export function App({
     saveResults,
     increaseSpeed,
     decreaseSpeed,
-  } = useBacktest(candles, strategy, initialBalance);
+  } = useBacktest(instruments, initialBalance);
 
   useKeyboard({
     status: state.status,
@@ -46,12 +44,14 @@ export function App({
     onSpeedDown: decreaseSpeed,
   });
 
+  const instrumentNames = instruments.map((d) => d.instrument);
+
   return (
     <Box flexDirection="column" height="100%">
       {/* Header */}
       <Header
         strategy={strategyName}
-        instrument={instrument}
+        instruments={instrumentNames}
         timeframe={timeframe}
         status={state.status}
         progress={state.progress}

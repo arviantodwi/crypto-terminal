@@ -2,23 +2,24 @@
  * TUI entry point for the backtest simulator.
  *
  * Usage:
- *   tsx --env-file .env src/tui.tsx [--strategy=pattern-based-v1]
+ *   tsx --env-file .env src/tui.tsx [--strategy=pattern-based-v1] [--instruments=BTCUSDT,ETHUSDT]
  *
- * Environment variables (same as index.ts):
+ * Environment variables:
  *   DATABASE_URL      – PostgreSQL connection string
- *   INSTRUMENT        – e.g. BTCUSDT (default)
  *   TIMEFRAME         – e.g. 5m (default)
- *   INITIAL_BALANCE   – starting USD balance (default 1000)
+ *   INITIAL_BALANCE   – starting USD balance per instrument (default 1000)
  */
 import pg from 'pg';
 import { render } from 'ink';
 import { config } from './config.js';
 import { createDb } from './db/client.js';
-import { fetchAllCandles } from './db/queries.js';
+import { fetchAllCandles, fetchAvailableInstruments } from './db/queries.js';
 import { loadStrategy, KNOWN_STRATEGIES } from './strategies/loader.js';
 import { BASE_STRATEGY_CONFIG } from './strategies/base-config.js';
 import type { OhlcCandle, StrategyRunner, TradeSignal, ExecutedTrade } from './engine/types.js';
 import { App } from './tui/App.js';
+import type { InstrumentData } from './tui/types.js';
+import { promptInstrumentSelection } from './shared/instrument-selector.js';
 
 const { Pool } = pg;
 
@@ -29,6 +30,7 @@ const strategyArg = args.find((a) => a.startsWith('--strategy='))?.split('=')[1]
 const balanceArg = args.find((a) => a.startsWith('--balance='))?.split('=')[1];
 const riskArg = args.find((a) => a.startsWith('--risk='))?.split('=')[1];
 const tpArg = args.find((a) => a.startsWith('--tp-multiplier='))?.split('=')[1];
+const instrumentsArg = args.find((a) => a.startsWith('--instruments='))?.split('=')[1];
 
 const initialBalance = (() => {
   if (balanceArg !== undefined) {
@@ -105,34 +107,72 @@ async function main() {
 
     const db = createDb(pool);
 
-    // Load strategy
-    let strategy: StrategyRunner;
-    if (strategyArg === 'dummy') {
-      strategy = dummyStrategy;
+    // Fetch available instruments
+    process.stdout.write('[tui] Fetching available instruments…\n');
+    const availableInstruments = await fetchAvailableInstruments(db);
+
+    // Resolve instrument selection
+    let selectedInstruments: string[];
+    if (instrumentsArg) {
+      selectedInstruments = instrumentsArg
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s !== '');
+
+      // Validate against DB
+      const invalid = selectedInstruments.filter((i) => !availableInstruments.includes(i));
+      if (invalid.length > 0) {
+        process.stderr.write(
+          `[tui] Unknown instrument(s): ${invalid.join(', ')}. Available: ${availableInstruments.join(', ')}\n`,
+        );
+        process.exit(1);
+      }
+      if (selectedInstruments.length === 0) {
+        process.stderr.write('[tui] --instruments argument is empty. Specify at least one instrument.\n');
+        process.exit(1);
+      }
     } else {
-      strategy = await loadStrategy(
-        strategyArg as Parameters<typeof loadStrategy>[0],
-        db,
-        {
-          instrument: config.instrument,
-          timeframe: config.timeframe,
-          initialBalance,
-          ...(riskPct !== undefined && { riskPct }),
-          ...(tpMultiplier !== undefined && { tpMultiplier }),
-        },
-      );
+      try {
+        selectedInstruments = await promptInstrumentSelection(availableInstruments, '[tui]');
+      } catch (err) {
+        process.stderr.write(`[tui] ${String(err)}\n`);
+        process.exit(1);
+      }
     }
 
-    process.stdout.write(`[tui] Strategy loaded: ${strategy.name} v${strategy.version}\n`);
+    process.stdout.write(`[tui] Selected instruments: ${selectedInstruments.join(', ')}\n`);
 
-    // Fetch candles
-    process.stdout.write('[tui] Loading candles…\n');
-    const candles = await fetchAllCandles(db, config.instrument, config.timeframe);
-    process.stdout.write(`[tui] Loaded ${candles.length} candles\n`);
+    // Load strategy and candles for each instrument
+    const instrumentDataList: InstrumentData[] = [];
 
-    if (candles.length < 3) {
-      process.stderr.write('[tui] Not enough candles to run (need at least 3)\n');
-      process.exit(1);
+    for (const instrument of selectedInstruments) {
+      let strategy: StrategyRunner;
+      if (strategyArg === 'dummy') {
+        strategy = dummyStrategy;
+      } else {
+        strategy = await loadStrategy(
+          strategyArg as Parameters<typeof loadStrategy>[0],
+          db,
+          {
+            instrument,
+            timeframe: config.timeframe,
+            initialBalance,
+            ...(riskPct !== undefined && { riskPct }),
+            ...(tpMultiplier !== undefined && { tpMultiplier }),
+          },
+        );
+      }
+
+      process.stdout.write(`[tui] Loading candles for ${instrument}…\n`);
+      const candles = await fetchAllCandles(db, instrument, config.timeframe);
+      process.stdout.write(`[tui] Loaded ${candles.length} candles for ${instrument}\n`);
+
+      if (candles.length < 3) {
+        process.stderr.write(`[tui] Not enough candles for ${instrument} (need at least 3)\n`);
+        process.exit(1);
+      }
+
+      instrumentDataList.push({ instrument, candles, strategy });
     }
 
     // Close pool (TUI loop takes over from here — no more DB needed)
@@ -144,10 +184,8 @@ async function main() {
     // Render TUI
     render(
       <App
-        candles={candles}
-        strategy={strategy}
-        strategyName={strategy.name}
-        instrument={config.instrument}
+        instruments={instrumentDataList}
+        strategyName={strategyArg}
         timeframe={config.timeframe}
         initialBalance={initialBalance}
         riskPercent={riskPct ?? BASE_STRATEGY_CONFIG.riskPct}

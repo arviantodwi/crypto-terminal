@@ -1,6 +1,6 @@
 # trading-simulator
 
-Backtesting engine for OHLCV-based trading strategies. Iterates through historical BTCUSDT 5-minute candles, runs a strategy against a sliding 3-candle window, and tracks portfolio performance (balance, SL/TP hits, P&L).
+Backtesting engine for OHLCV-based trading strategies. Iterates through historical candles for one or more instruments, runs a strategy against a sliding 3-candle window, and tracks portfolio performance (balance, SL/TP hits, P&L).
 
 ## Prerequisites
 
@@ -14,7 +14,6 @@ Backtesting engine for OHLCV-based trading strategies. Iterates through historic
 
 ```env
 DATABASE_URL=postgres://user:password@localhost:5432/crypto_terminal
-INSTRUMENT=BTCUSDT
 TIMEFRAME=5m
 INITIAL_BALANCE=1000
 LOG_LEVEL=info
@@ -42,6 +41,12 @@ Use a specific strategy with custom settings:
 pnpm tui -- --strategy=pattern-based-v1
 pnpm tui -- --strategy=pattern-based-v1 --balance=5000
 pnpm tui -- --strategy=pattern-based-v1 --balance=5000 --risk=2 --tp-multiplier=1.5
+```
+
+Pass instruments directly to skip the interactive prompt:
+
+```bash
+pnpm tui -- --strategy=pattern-based-v1 --instruments=BTCUSDT,ETHUSDT
 ```
 
 ### CLI Backtest (headless-friendly)
@@ -93,7 +98,8 @@ pnpm start -- --strategy=pattern-based-v1 --output=run-2024-01-15.json
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--strategy=<name>` | Strategy to run | `dummy` |
-| `--balance=<number>` | Initial balance in USD | From `INITIAL_BALANCE` env |
+| `--instruments=<list>` | Comma-separated instrument symbols (skips interactive prompt) | Interactive prompt |
+| `--balance=<number>` | Initial balance in USD per instrument | From `INITIAL_BALANCE` env |
 | `--risk=<number>` | Risk % per trade (0–100) | From strategy default |
 | `--tp-multiplier=<number>` | Take-profit multiplier (must be > 0) | From strategy default |
 
@@ -102,7 +108,8 @@ pnpm start -- --strategy=pattern-based-v1 --output=run-2024-01-15.json
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--strategy=<name>` | Strategy to run | `dummy` |
-| `--balance=<number>` | Initial balance in USD | From `INITIAL_BALANCE` env |
+| `--instruments=<list>` | Comma-separated instrument symbols (skips interactive prompt) | Interactive prompt |
+| `--balance=<number>` | Initial balance in USD per instrument | From `INITIAL_BALANCE` env |
 | `--risk=<number>` | Risk % per trade (0–100) | From strategy default |
 | `--tp-multiplier=<number>` | Take-profit multiplier (must be > 0) | From strategy default |
 | `--headless` | Run without TUI, auto-save on completion | `false` |
@@ -153,6 +160,7 @@ Each row in the trade log records:
 | Column | Description |
 |--------|-------------|
 | `#` | Sequential trade ID |
+| `Ticker` | Instrument symbol (e.g. `BTCUSDT`) |
 | `Time` | Entry timestamp |
 | `Type` | `LONG` or `SHORT` |
 | `Entry` | Entry price |

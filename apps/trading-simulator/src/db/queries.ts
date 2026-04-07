@@ -5,6 +5,19 @@ import type { OhlcCandle } from '../engine/types.js';
 import type { CandleLabel } from '@crypto-terminal/trade-formula';
 
 /**
+ * Fetch all unique instrument names available in the ohlcv_candles table,
+ * sorted alphabetically. Used to populate the instrument selection prompt.
+ */
+export async function fetchAvailableInstruments(db: Db): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ instrument: ohlcvCandles.instrument })
+    .from(ohlcvCandles)
+    .orderBy(asc(ohlcvCandles.instrument));
+
+  return rows.map((r) => r.instrument);
+}
+
+/**
  * Fetch all OHLCV candles for the given instrument and timeframe,
  * ordered chronologically. Returns the full set as an in-memory array
  * ready for TimeMachine iteration.

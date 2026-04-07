@@ -6,7 +6,7 @@ import { TimeMachine } from '../../engine/time-machine.js';
 import { Portfolio } from '../../engine/portfolio.js';
 import { calculateMetrics } from '../../shared/metrics.js';
 import { InMemoryTradeLog } from '../../shared/execution-log.js';
-import type { BacktestState, BacktestStatus, PatternAnalysisData, SpeedLevel } from '../types.js';
+import type { BacktestState, BacktestStatus, PatternAnalysisData, SpeedLevel, InstrumentData } from '../types.js';
 
 // ── Speed → { intervalMs, batchSize } ────────────────────────────────────────
 
@@ -24,6 +24,16 @@ const SPEED_CONFIG: Record<SpeedLevel, SpeedConfig> = {
 };
 
 export const SPEED_LEVELS: SpeedLevel[] = [1, 10, 100, 1000, 0];
+
+// ── Per-instrument runtime state ──────────────────────────────────────────────
+
+interface InstrumentRuntime {
+  instrument: string;
+  strategy: StrategyRunner;
+  timeMachine: TimeMachine;
+  portfolio: Portfolio;
+  done: boolean;
+}
 
 // ── Pattern data extraction ───────────────────────────────────────────────────
 
@@ -66,15 +76,16 @@ function extractPatternData(
 
 // ── Initial state ─────────────────────────────────────────────────────────────
 
-function buildInitialState(candles: OhlcCandle[], initialBalance: number): BacktestState {
+function buildInitialState(instruments: InstrumentData[], initialBalance: number): BacktestState {
+  const totalCandles = instruments.reduce((sum, { candles }) => sum + candles.length, 0);
   return {
     status: 'IDLE',
     currentCandles: null,
     patternData: null,
     tradeSignal: null,
-    currentBalance: initialBalance,
+    currentBalance: initialBalance * instruments.length,
     candlesProcessed: 0,
-    totalCandles: candles.length,
+    totalCandles,
     currentTimestamp: new Date(0),
     progress: 0,
     trades: [],
@@ -86,17 +97,15 @@ function buildInitialState(candles: OhlcCandle[], initialBalance: number): Backt
 // ── useBacktest hook ──────────────────────────────────────────────────────────
 
 export function useBacktest(
-  candles: OhlcCandle[],
-  strategy: StrategyRunner,
+  instruments: InstrumentData[],
   initialBalance: number,
 ) {
   const [state, setState] = useState<BacktestState>(() =>
-    buildInitialState(candles, initialBalance),
+    buildInitialState(instruments, initialBalance),
   );
   const [speed, setSpeedState] = useState<SpeedLevel>(10);
 
-  const timeMachineRef = useRef<TimeMachine | null>(null);
-  const portfolioRef = useRef<Portfolio | null>(null);
+  const runtimesRef = useRef<InstrumentRuntime[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusRef = useRef<BacktestStatus>('IDLE');
   const speedRef = useRef<SpeedLevel>(10);
@@ -112,93 +121,115 @@ export function useBacktest(
     }
   }, []);
 
-  // ── Tick: process N candles and update state ─────────────────────────────────
+  // ── Tick: process N candles per instrument and update state ──────────────────
 
   const tick = useCallback(() => {
-    const tm = timeMachineRef.current;
-    const portfolio = portfolioRef.current;
-    if (!tm || !portfolio || statusRef.current !== 'RUNNING') return;
+    const runtimes = runtimesRef.current;
+    if (runtimes.length === 0 || statusRef.current !== 'RUNNING') return;
 
     const { batchSize } = SPEED_CONFIG[speedRef.current];
-    const prevTradeCount = portfolio.getTrades().length;
 
     let lastWindow: [OhlcCandle, OhlcCandle, OhlcCandle] | null = null;
     let lastSignal: TradeSignal | null = null;
-    let done = false;
+    const batchNewTrades: ExecutedTrade[] = [];
 
-    for (let i = 0; i < batchSize; i++) {
-      const window = tm.next();
-      if (!window) {
-        done = true;
-        break;
-      }
+    for (const runtime of runtimes) {
+      if (runtime.done) continue;
 
-      const [, , c3] = window;
+      const { timeMachine, portfolio, strategy } = runtime;
+      const prevTradeCount = portfolio.getTrades().length;
 
-      // Check open position exit
-      if (portfolio.hasOpenPosition()) {
-        const slHit = portfolio.checkStopLoss(c3);
-        if (!slHit) portfolio.checkTakeProfit(c3);
-      }
+      let localLastWindow: [OhlcCandle, OhlcCandle, OhlcCandle] | null = null;
+      let localLastSignal: TradeSignal | null = null;
 
-      // Analyze for new entry
-      let signal: TradeSignal | null = null;
-      if (!portfolio.hasOpenPosition()) {
-        try {
-          signal = strategy.analyze(window);
-        } catch {
-          // Skip candle on strategy error — consistent with BacktestRunner behaviour
-          strategyErrorCountRef.current++;
+      for (let i = 0; i < batchSize; i++) {
+        const window = timeMachine.next();
+        if (!window) {
+          runtime.done = true;
+          break;
         }
-        if (signal) portfolio.openPosition(signal, c3.open_time);
+
+        const [, , c3] = window;
+
+        // Check open position exit
+        if (portfolio.hasOpenPosition()) {
+          const slHit = portfolio.checkStopLoss(c3);
+          if (!slHit) portfolio.checkTakeProfit(c3);
+        }
+
+        // Analyze for new entry
+        let signal: TradeSignal | null = null;
+        if (!portfolio.hasOpenPosition()) {
+          try {
+            signal = strategy.analyze(window);
+          } catch {
+            strategyErrorCountRef.current++;
+          }
+          if (signal) portfolio.openPosition(signal, c3.open_time);
+        }
+
+        localLastWindow = window;
+        localLastSignal = signal;
       }
 
-      lastWindow = window;
-      lastSignal = signal;
+      // Notify strategy of trades closed during this batch
+      const allTrades = portfolio.getTrades();
+      const newTrades = allTrades.slice(prevTradeCount);
+      for (const trade of newTrades) {
+        strategy.onTradeExecuted(trade);
+        batchNewTrades.push(trade);
+      }
+
+      if (localLastWindow) {
+        lastWindow = localLastWindow;
+        lastSignal = localLastSignal;
+      }
     }
 
-    // Notify strategy of trades closed during this batch
-    const allTrades = portfolio.getTrades();
-    const newTrades = allTrades.slice(prevTradeCount);
-    for (const trade of newTrades) {
-      strategy.onTradeExecuted(trade);
-    }
-
-    // Maintain a capped ring buffer of the 10 most recent trades
-    if (newTrades.length > 0) {
-      const combined = recentTradesRef.current.concat(newTrades);
+    // Maintain a capped ring buffer of the 10 most recent trades across all instruments
+    if (batchNewTrades.length > 0) {
+      const combined = recentTradesRef.current.concat(batchNewTrades);
       recentTradesRef.current = combined.length > 10 ? combined.slice(-10) : combined;
     }
 
-    if (done) {
+    const allDone = runtimes.every((r) => r.done);
+    if (allDone) {
       statusRef.current = 'COMPLETE';
       stopInterval();
     }
 
-    const progressStr = tm.progress();
-    const parts = progressStr.split(' / ');
-    const rawProcessed = parseInt((parts[0] ?? '0').replace(/,/g, ''), 10);
-    const rawTotal = parseInt((parts[1] ?? '1').replace(/,/g, ''), 10);
-    const processed = Number.isNaN(rawProcessed) ? 0 : rawProcessed;
-    const total = Number.isNaN(rawTotal) ? 1 : rawTotal;
+    // Aggregate state across all instruments
+    const allTrades = runtimes.flatMap((r) => r.portfolio.getTrades());
+    const totalBalance = runtimes.reduce((sum, r) => sum + r.portfolio.getBalance(), 0);
+
+    // Sum progress across all instruments
+    let totalProcessed = 0;
+    let totalCandlesSum = 0;
+    for (const runtime of runtimes) {
+      const progressStr = runtime.timeMachine.progress();
+      const parts = progressStr.split(' / ');
+      const rawProcessed = parseInt((parts[0] ?? '0').replace(/,/g, ''), 10);
+      totalProcessed += Number.isNaN(rawProcessed) ? 0 : rawProcessed;
+      totalCandlesSum += runtime.timeMachine.total;
+    }
 
     setState({
-      status: done ? 'COMPLETE' : statusRef.current,
+      status: allDone ? 'COMPLETE' : statusRef.current,
       currentCandles: lastWindow,
       patternData: lastWindow ? extractPatternData(lastWindow, lastSignal) : null,
       tradeSignal: lastSignal,
-      currentBalance: portfolio.getBalance(),
-      candlesProcessed: processed,
-      totalCandles: total,
+      currentBalance: totalBalance,
+      candlesProcessed: totalProcessed,
+      totalCandles: totalCandlesSum,
       currentTimestamp: lastWindow ? new Date(lastWindow[2].open_time * 1000) : new Date(0),
-      progress: total > 0 ? (processed / total) * 100 : 0,
+      progress: totalCandlesSum > 0 ? (totalProcessed / totalCandlesSum) * 100 : 0,
       trades: recentTradesRef.current,
-      metrics: calculateMetrics(allTrades, initialBalance),
+      metrics: calculateMetrics(allTrades, initialBalance * runtimes.length),
       strategyErrorCount: strategyErrorCountRef.current,
-      effectiveTpMultiplier: strategy.getEffectiveTpMultiplier?.(),
-      effectiveRiskPct: strategy.getEffectiveRiskPct?.(),
+      effectiveTpMultiplier: runtimes[0]?.strategy.getEffectiveTpMultiplier?.(),
+      effectiveRiskPct: runtimes[0]?.strategy.getEffectiveRiskPct?.(),
     });
-  }, [strategy, initialBalance, stopInterval]);
+  }, [initialBalance, stopInterval]);
 
   // ── Start interval at given speed ────────────────────────────────────────────
 
@@ -214,10 +245,15 @@ export function useBacktest(
   // ── Init / reset engine state ────────────────────────────────────────────────
 
   const initEngine = useCallback(() => {
-    timeMachineRef.current = new TimeMachine(candles);
-    portfolioRef.current = new Portfolio(initialBalance);
+    runtimesRef.current = instruments.map(({ instrument, candles, strategy }) => ({
+      instrument,
+      strategy,
+      timeMachine: new TimeMachine(candles),
+      portfolio: new Portfolio(initialBalance, instrument),
+      done: false,
+    }));
     statusRef.current = 'IDLE';
-  }, [candles, initialBalance]);
+  }, [instruments, initialBalance]);
 
   // ── Public controls ──────────────────────────────────────────────────────────
 
@@ -244,30 +280,39 @@ export function useBacktest(
 
   const restart = useCallback(() => {
     stopInterval();
-    strategy.reset();
+    for (const runtime of runtimesRef.current) {
+      runtime.strategy.reset();
+    }
     initEngine();
     recentTradesRef.current = [];
     strategyErrorCountRef.current = 0;
-    setState(buildInitialState(candles, initialBalance));
-  }, [stopInterval, strategy, initEngine, candles, initialBalance]);
+    setState(buildInitialState(instruments, initialBalance));
+  }, [stopInterval, initEngine, instruments, initialBalance]);
 
   const saveResults = useCallback(() => {
-    const allTrades = portfolioRef.current?.getTrades() ?? [];
-    const balance = portfolioRef.current?.getBalance() ?? initialBalance;
-    const metrics = calculateMetrics(allTrades, initialBalance);
+    const runtimes = runtimesRef.current;
+    const allTrades = runtimes.flatMap((r) => r.portfolio.getTrades());
+    const totalBalance = runtimes.reduce((sum, r) => sum + r.portfolio.getBalance(), 0);
+    const totalInitialBalance = initialBalance * runtimes.length;
+    const metrics = calculateMetrics(allTrades, totalInitialBalance);
     const timestamp = new Date().toISOString();
     const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);
     const exportDir = './export';
     mkdirSync(exportDir, { recursive: true });
-    const basename = `${exportDir}/backtest-${strategy.name}-${safeTimestamp}`;
+
+    const strategyName = runtimes[0]?.strategy.name ?? 'unknown';
+    const strategyVersion = runtimes[0]?.strategy.version ?? '0.0.0';
+    const basename = `${exportDir}/backtest-${strategyName}-${safeTimestamp}`;
 
     // JSON
     const payload = {
       metadata: {
-        strategy: strategy.name,
-        version: strategy.version,
+        strategy: strategyName,
+        version: strategyVersion,
+        instruments: runtimes.map((r) => r.instrument),
         initialBalance,
-        finalBalance: balance,
+        totalInitialBalance,
+        finalBalance: totalBalance,
         runDate: timestamp,
       },
       trades: allTrades,
@@ -291,10 +336,10 @@ export function useBacktest(
     // CSV via shared InMemoryTradeLog
     const tradeLog = new InMemoryTradeLog();
     for (const trade of allTrades) {
-      tradeLog.logTrade(trade, strategy.name, strategy.version);
+      tradeLog.logTrade(trade, strategyName, strategyVersion);
     }
     tradeLog.exportToCSV(`${basename}.csv`);
-  }, [strategy, initialBalance]);
+  }, [initialBalance]);
 
   const setSpeed = useCallback(
     (newSpeed: SpeedLevel) => {

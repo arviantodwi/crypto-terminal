@@ -9,6 +9,7 @@ import type { ExecutedTrade } from '../src/engine/types.js';
 function makeTrade(overrides: Partial<ExecutedTrade> = {}): ExecutedTrade {
   return {
     id: 1,
+    instrument: 'BTCUSDT',
     entryTimestamp: new Date('2026-01-01T00:00:00Z'),
     exitTimestamp: new Date('2026-01-01T01:00:00Z'),
     direction: 'LONG',

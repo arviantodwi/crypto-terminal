@@ -18,6 +18,8 @@ export interface BacktestRunnerOptions {
   candles: OhlcCandle[];
   strategy: StrategyRunner;
   initialBalance: number;
+  /** Instrument being backtested — tagged on every ExecutedTrade. */
+  instrument?: string;
   /** Log progress every N candles. Default 1000. */
   progressInterval?: number;
   /**
@@ -41,6 +43,7 @@ export class BacktestRunner extends EventEmitter {
   private readonly candles: OhlcCandle[];
   private readonly strategy: StrategyRunner;
   private readonly initialBalance: number;
+  private readonly instrument: string;
   private readonly progressInterval: number;
   private readonly haltOnStrategyError: boolean;
 
@@ -49,13 +52,14 @@ export class BacktestRunner extends EventEmitter {
     this.candles = options.candles;
     this.strategy = options.strategy;
     this.initialBalance = options.initialBalance;
+    this.instrument = options.instrument ?? '';
     this.progressInterval = options.progressInterval ?? 1000;
     this.haltOnStrategyError = options.haltOnStrategyError ?? false;
   }
 
   run(): BacktestResults {
     const timeMachine = new TimeMachine(this.candles);
-    const portfolio = new Portfolio(this.initialBalance);
+    const portfolio = new Portfolio(this.initialBalance, this.instrument);
 
     let windowCount = 0;
     let strategyErrorCount = 0;

@@ -2,6 +2,14 @@ import type { CandleLabel } from '@crypto-terminal/trade-formula';
 import type { OhlcCandle, ExecutedTrade, TradeSignal, StrategyRunner } from '../engine/types.js';
 import type { PerformanceMetrics } from '../shared/metrics.js';
 
+// ── Per-instrument data bundle passed to the TUI ──────────────────────────────
+
+export interface InstrumentData {
+  instrument: string;
+  candles: OhlcCandle[];
+  strategy: StrategyRunner;
+}
+
 // ── Backtest status ────────────────────────────────────────────────────────────
 
 export type BacktestStatus = 'IDLE' | 'RUNNING' | 'PAUSED' | 'COMPLETE';
@@ -54,10 +62,8 @@ export interface BacktestState {
 // ── Props for the TUI App root component ─────────────────────────────────────
 
 export interface TuiAppProps {
-  candles: OhlcCandle[];
-  strategy: StrategyRunner;
+  instruments: InstrumentData[];
   strategyName: string;
-  instrument: string;
   timeframe: string;
   initialBalance: number;
   riskPercent: number;
