@@ -66,6 +66,8 @@ export interface TuiAppProps {
   strategyName: string;
   timeframe: string;
   initialBalance: number;
+  sharedBalance: boolean;
+  perInstrumentBalance: number;
   riskPercent: number;
   tpMultiplier: number;
 }

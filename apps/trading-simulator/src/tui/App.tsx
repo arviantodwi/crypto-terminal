@@ -15,6 +15,8 @@ export function App({
   strategyName,
   timeframe,
   initialBalance,
+  sharedBalance,
+  perInstrumentBalance,
   riskPercent,
   tpMultiplier,
 }: TuiAppProps) {
@@ -30,7 +32,7 @@ export function App({
     saveResults,
     increaseSpeed,
     decreaseSpeed,
-  } = useBacktest(instruments, initialBalance);
+  } = useBacktest(instruments, initialBalance, sharedBalance, perInstrumentBalance);
 
   useKeyboard({
     status: state.status,

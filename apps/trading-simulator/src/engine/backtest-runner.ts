@@ -177,6 +177,12 @@ export interface MultiInstrumentBacktestRunnerOptions {
   instrumentCandles: Map<string, OhlcCandle[]>;
   strategies: Map<string, StrategyRunner>;
   initialBalance: number;
+  /**
+   * When true (default), all instruments share a single balance pool.
+   * When false, the initial balance is split evenly across all instruments,
+   * and each trades in its own pot until that pot reaches zero.
+   */
+  sharedBalance?: boolean;
   haltOnStrategyError?: boolean;
 }
 
@@ -199,6 +205,7 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
   private readonly instrumentCandles: Map<string, OhlcCandle[]>;
   private readonly strategies: Map<string, StrategyRunner>;
   private readonly initialBalance: number;
+  private readonly sharedBalance: boolean;
   private readonly haltOnStrategyError: boolean;
 
   constructor(options: MultiInstrumentBacktestRunnerOptions) {
@@ -206,14 +213,24 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
     this.instrumentCandles = options.instrumentCandles;
     this.strategies = options.strategies;
     this.initialBalance = options.initialBalance;
+    this.sharedBalance = options.sharedBalance ?? true;
     this.haltOnStrategyError = options.haltOnStrategyError ?? false;
   }
 
   run(): MultiInstrumentBacktestResults {
-    const sharedBalance = { value: this.initialBalance };
+    const numInstruments = this.instrumentCandles.size;
     const portfolios = new Map<string, Portfolio>();
-    for (const [instrument] of this.instrumentCandles) {
-      portfolios.set(instrument, new Portfolio(sharedBalance, instrument));
+
+    if (this.sharedBalance) {
+      const sharedBalance = { value: this.initialBalance };
+      for (const [instrument] of this.instrumentCandles) {
+        portfolios.set(instrument, new Portfolio(sharedBalance, instrument));
+      }
+    } else {
+      const perInstrumentBalance = this.initialBalance / numInstruments;
+      for (const [instrument] of this.instrumentCandles) {
+        portfolios.set(instrument, new Portfolio(perInstrumentBalance, instrument));
+      }
     }
 
     const timeSync = new TimeSync(this.instrumentCandles);
@@ -237,7 +254,7 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
           }
         }
 
-        if (!portfolio.hasOpenPosition()) {
+        if (!portfolio.hasOpenPosition() && portfolio.getBalance() > 0) {
           let signal: TradeSignal | null = null;
           try {
             signal = strategy.analyze(window);
@@ -271,9 +288,13 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
     const breakEvenCount = allTrades.filter((t) => t.pnlDollar === 0).length;
     const totalPnlDollar = allTrades.reduce((sum, t) => sum + t.pnlDollar, 0);
 
+    const finalBalance = this.sharedBalance
+      ? portfolios.values().next().value?.getBalance() ?? 0
+      : Array.from(portfolios.values()).reduce((sum, p) => sum + p.getBalance(), 0);
+
     const results: MultiInstrumentBacktestResults = {
       initialBalance: this.initialBalance,
-      finalBalance: sharedBalance.value,
+      finalBalance,
       totalTrades: allTrades.length,
       winCount,
       lossCount,

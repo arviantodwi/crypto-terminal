@@ -29,11 +29,12 @@ export const SPEED_LEVELS: SpeedLevel[] = [1, 10, 100, 1000, 0];
 
 interface MultiRuntime {
   timeSync: TimeSync;
-  sharedBalance: BalanceRef;
+  sharedBalance: BalanceRef | null;
   portfolios: Map<string, Portfolio>;
   strategies: Map<string, StrategyRunner>;
   instruments: string[];
   done: boolean;
+  sharedBalanceMode: boolean;
 }
 
 // ── Pattern data extraction ───────────────────────────────────────────────────
@@ -104,9 +105,11 @@ function buildInitialState(instruments: InstrumentData[], initialBalance: number
 export function useBacktest(
   instruments: InstrumentData[],
   initialBalance: number,
+  sharedBalanceMode: boolean,
+  perInstrumentBalance: number,
 ) {
   const [state, setState] = useState<BacktestState>(() =>
-    buildInitialState(instruments, initialBalance),
+    buildInitialState(instruments, perInstrumentBalance),
   );
   const [speed, setSpeedState] = useState<SpeedLevel>(10);
 
@@ -163,7 +166,7 @@ export function useBacktest(
 
         // Analyze for new entry
         let signal: TradeSignal | null = null;
-        if (!portfolio.hasOpenPosition()) {
+        if (!portfolio.hasOpenPosition() && portfolio.getBalance() > 0) {
           try {
             signal = strategy.analyze(window);
           } catch {
@@ -203,12 +206,17 @@ export function useBacktest(
     const totalCandlesSum = timeSync.total;
     const firstStrategy = strategies.values().next().value as StrategyRunner | undefined;
 
+    // Calculate current balance based on mode
+    const currentBalance = runtime.sharedBalanceMode
+      ? (runtime.sharedBalance?.value ?? 0)
+      : [...portfolios.values()].reduce((sum, p) => sum + p.getBalance(), 0);
+
     setState({
       status: runtime.done ? 'COMPLETE' : statusRef.current,
       currentCandles: lastWindow,
       patternData: lastWindow ? extractPatternData(lastWindow, lastSignal) : null,
       tradeSignal: lastSignal,
-      currentBalance: sharedBalance.value,
+      currentBalance,
       candlesProcessed: totalProcessed,
       totalCandles: totalCandlesSum,
       currentTimestamp: lastTimestamp > 0 ? new Date(lastTimestamp * 1000) : new Date(0),
@@ -235,27 +243,44 @@ export function useBacktest(
   // ── Init / reset engine state ────────────────────────────────────────────────
 
   const initEngine = useCallback(() => {
-    const sharedBalance: BalanceRef = { value: initialBalance };
     const portfolios = new Map<string, Portfolio>();
     const strategies = new Map<string, StrategyRunner>();
     const instrumentCandlesMap = new Map<string, OhlcCandle[]>();
 
-    for (const { instrument, candles, strategy } of instruments) {
-      portfolios.set(instrument, new Portfolio(sharedBalance, instrument));
-      strategies.set(instrument, strategy);
-      instrumentCandlesMap.set(instrument, candles);
+    if (sharedBalanceMode) {
+      const sharedBalance: BalanceRef = { value: initialBalance };
+      for (const { instrument, candles, strategy } of instruments) {
+        portfolios.set(instrument, new Portfolio(sharedBalance, instrument));
+        strategies.set(instrument, strategy);
+        instrumentCandlesMap.set(instrument, candles);
+      }
+      runtimeRef.current = {
+        timeSync: new TimeSync(instrumentCandlesMap),
+        sharedBalance,
+        portfolios,
+        strategies,
+        instruments: instruments.map((i) => i.instrument),
+        done: false,
+        sharedBalanceMode: true,
+      };
+    } else {
+      for (const { instrument, candles, strategy } of instruments) {
+        portfolios.set(instrument, new Portfolio(perInstrumentBalance, instrument));
+        strategies.set(instrument, strategy);
+        instrumentCandlesMap.set(instrument, candles);
+      }
+      runtimeRef.current = {
+        timeSync: new TimeSync(instrumentCandlesMap),
+        sharedBalance: null,
+        portfolios,
+        strategies,
+        instruments: instruments.map((i) => i.instrument),
+        done: false,
+        sharedBalanceMode: false,
+      };
     }
-
-    runtimeRef.current = {
-      timeSync: new TimeSync(instrumentCandlesMap),
-      sharedBalance,
-      portfolios,
-      strategies,
-      instruments: instruments.map((i) => i.instrument),
-      done: false,
-    };
     statusRef.current = 'IDLE';
-  }, [instruments, initialBalance]);
+  }, [instruments, initialBalance, sharedBalanceMode, perInstrumentBalance]);
 
   // ── Public controls ──────────────────────────────────────────────────────────
 
@@ -291,15 +316,17 @@ export function useBacktest(
     initEngine();
     recentTradesRef.current = [];
     strategyErrorCountRef.current = 0;
-    setState(buildInitialState(instruments, initialBalance));
-  }, [stopInterval, initEngine, instruments, initialBalance]);
+    setState(buildInitialState(instruments, perInstrumentBalance));
+  }, [stopInterval, initEngine, instruments, perInstrumentBalance]);
 
   const saveResults = useCallback(() => {
     const runtime = runtimeRef.current;
     if (!runtime) return;
 
     const allTrades = [...runtime.portfolios.values()].flatMap((p) => p.getTrades());
-    const totalBalance = runtime.sharedBalance.value;
+    const totalBalance = runtime.sharedBalanceMode
+      ? runtime.sharedBalance?.value ?? 0
+      : [...runtime.portfolios.values()].reduce((sum, p) => sum + p.getBalance(), 0);
     const metrics = calculateMetrics(allTrades, initialBalance);
     const timestamp = new Date().toISOString();
     const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);

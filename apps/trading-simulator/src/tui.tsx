@@ -31,6 +31,7 @@ const balanceArg = args.find((a) => a.startsWith('--balance='))?.split('=')[1];
 const riskArg = args.find((a) => a.startsWith('--risk='))?.split('=')[1];
 const tpArg = args.find((a) => a.startsWith('--tp-multiplier='))?.split('=')[1];
 const instrumentsArg = args.find((a) => a.startsWith('--instruments='))?.split('=')[1];
+const sharedBalance = args.includes('--shared-balance');
 
 const initialBalance = (() => {
   if (balanceArg !== undefined) {
@@ -142,6 +143,15 @@ async function main() {
 
     process.stdout.write(`[tui] Selected instruments: ${selectedInstruments.join(', ')}\n`);
 
+    // Calculate per-instrument balance for split mode
+    const perInstrumentBalance = sharedBalance
+      ? initialBalance
+      : initialBalance / selectedInstruments.length;
+
+    process.stdout.write(
+      `[tui] Balance mode: ${sharedBalance ? 'shared' : 'split'} (total: ${initialBalance}, per-instrument: ${perInstrumentBalance.toFixed(2)})\n`,
+    );
+
     // Load strategy and candles for each instrument
     const instrumentDataList: InstrumentData[] = [];
 
@@ -156,7 +166,7 @@ async function main() {
           {
             instrument,
             timeframe: config.timeframe,
-            initialBalance,
+            initialBalance: perInstrumentBalance,
             ...(riskPct !== undefined && { riskPct }),
             ...(tpMultiplier !== undefined && { tpMultiplier }),
           },
@@ -188,6 +198,8 @@ async function main() {
         strategyName={strategyArg}
         timeframe={config.timeframe}
         initialBalance={initialBalance}
+        sharedBalance={sharedBalance}
+        perInstrumentBalance={perInstrumentBalance}
         riskPercent={riskPct ?? BASE_STRATEGY_CONFIG.riskPct}
         tpMultiplier={tpMultiplier ?? BASE_STRATEGY_CONFIG.tpMultiplier}
       />,

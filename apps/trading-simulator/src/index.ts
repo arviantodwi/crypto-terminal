@@ -39,6 +39,7 @@ const outputArg = getArg('--output=');
 const instrumentsArg = getArg('--instruments=');
 const headless = hasFlag('--headless');
 const haltOnError = hasFlag('--halt-on-error');
+const sharedBalance = hasFlag('--shared-balance');
 
 // CLI args override environment variables
 const initialBalance = (() => {
@@ -205,6 +206,11 @@ async function main() {
 
     log.info({ instruments: selectedInstruments }, '[cli] Instruments selected');
 
+    // Calculate per-instrument balance for split mode
+    const perInstrumentBalance = sharedBalance
+      ? initialBalance
+      : initialBalance / selectedInstruments.length;
+
     // Load strategies and candles for all instruments
     const strategiesMap = new Map<string, StrategyRunner>();
     const candlesMap = new Map<string, OhlcCandle[]>();
@@ -219,7 +225,7 @@ async function main() {
           strategy = await loadStrategy(strategyArg as Parameters<typeof loadStrategy>[0], db, {
             instrument,
             timeframe: config.timeframe,
-            initialBalance,
+            initialBalance: perInstrumentBalance,
             ...(riskPct !== undefined && { riskPct }),
             ...(tpMultiplier !== undefined && { tpMultiplier }),
           });
@@ -245,14 +251,15 @@ async function main() {
     }
 
     log.info(
-      { instruments: selectedInstruments, initialBalance, headless, haltOnError },
-      '[backtest] Starting parallel multi-instrument run',
+      { instruments: selectedInstruments, initialBalance, perInstrumentBalance, headless, haltOnError, sharedBalance },
+      '[cli] Starting parallel multi-instrument run',
     );
 
     const runner = new MultiInstrumentBacktestRunner({
       instrumentCandles: candlesMap,
       strategies: strategiesMap,
       initialBalance,
+      sharedBalance,
       haltOnStrategyError: haltOnError,
     });
 
