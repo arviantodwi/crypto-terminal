@@ -23,12 +23,14 @@ export class Portfolio {
   private position: OpenPosition | null = null;
   private readonly completedTrades: ExecutedTrade[] = [];
   private tradeIdCounter = 0;
+  private readonly instrument: string;
 
-  constructor(initialBalance: number) {
+  constructor(initialBalance: number, instrument = '') {
     if (initialBalance <= 0) {
       throw new Error(`initialBalance must be positive, got ${initialBalance}`);
     }
     this.balance = initialBalance;
+    this.instrument = instrument;
   }
 
   // ── Position lifecycle ──────────────────────────────────────────────────────
@@ -136,6 +138,7 @@ export class Portfolio {
     // strategies must bake leverage into dollarRisk themselves if needed.
     const trade: ExecutedTrade = {
       id: ++this.tradeIdCounter,
+      instrument: this.instrument,
       entryTimestamp,
       exitTimestamp: new Date(exitTimestamp * 1000),
       direction: side,

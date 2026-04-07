@@ -3,12 +3,13 @@ import pg from 'pg';
 import pino from 'pino';
 import { config } from './config.js';
 import { createDb } from './db/client.js';
-import { fetchAllCandles } from './db/queries.js';
+import { fetchAllCandles, fetchAvailableInstruments } from './db/queries.js';
 import { BacktestRunner } from './engine/backtest-runner.js';
 import type { ExecutedTrade, OhlcCandle, StrategyRunner, TradeSignal } from './engine/types.js';
 import { calculateMetrics } from './shared/metrics.js';
 import { InMemoryTradeLog } from './shared/execution-log.js';
 import { loadStrategy, KNOWN_STRATEGIES } from './strategies/loader.js';
+import { promptInstrumentSelection } from './shared/instrument-selector.js';
 
 const log = pino({ level: config.logLevel });
 const { Pool } = pg;
@@ -35,6 +36,7 @@ const balanceArg = getArg('--balance=');
 const riskArg = getArg('--risk=');
 const tpArg = getArg('--tp-multiplier=');
 const outputArg = getArg('--output=');
+const instrumentsArg = getArg('--instruments=');
 const headless = hasFlag('--headless');
 const haltOnError = hasFlag('--halt-on-error');
 
@@ -95,13 +97,15 @@ const dummyStrategy: StrategyRunner = {
 
 function saveResults(
   strategyName: string,
+  selectedInstruments: string[],
   trades: ExecutedTrade[],
   initialBal: number,
+  totalInitialBal: number,
   finalBal: number,
   strategyErrorCount: number,
   outputPath?: string,
 ): void {
-  const metrics = calculateMetrics(trades, initialBal);
+  const metrics = calculateMetrics(trades, totalInitialBal);
   const timestamp = new Date().toISOString();
   const safeStrategy = strategyName.replace(/[^a-z0-9-]/gi, '-');
   const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);
@@ -112,9 +116,10 @@ function saveResults(
   const payload = {
     metadata: {
       strategy: strategyName,
-      instrument: config.instrument,
+      instruments: selectedInstruments,
       timeframe: config.timeframe,
       initialBalance: initialBal,
+      totalInitialBalance: totalInitialBal,
       finalBalance: finalBal,
       runDate: timestamp,
       strategyErrors: strategyErrorCount,
@@ -166,101 +171,167 @@ async function main() {
 
     const db = createDb(pool);
 
-    let strategy: StrategyRunner;
-    if (strategyArg === 'dummy') {
-      strategy = dummyStrategy;
+    // Fetch available instruments
+    const availableInstruments = await fetchAvailableInstruments(db);
+
+    // Resolve instrument selection
+    let selectedInstruments: string[];
+    if (instrumentsArg) {
+      selectedInstruments = instrumentsArg
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s !== '');
+
+      const invalid = selectedInstruments.filter((i) => !availableInstruments.includes(i));
+      if (invalid.length > 0) {
+        log.error(
+          { invalid, available: availableInstruments },
+          '[cli] Unknown instrument(s) specified via --instruments',
+        );
+        process.exit(1);
+      }
+      if (selectedInstruments.length === 0) {
+        log.error('[cli] --instruments argument is empty. Specify at least one instrument.');
+        process.exit(1);
+      }
     } else {
       try {
-        strategy = await loadStrategy(strategyArg as Parameters<typeof loadStrategy>[0], db, {
-          instrument: config.instrument,
-          timeframe: config.timeframe,
-          initialBalance,
-          ...(riskPct !== undefined && { riskPct }),
-          ...(tpMultiplier !== undefined && { tpMultiplier }),
-        });
-        log.info({ strategy: strategyArg }, '[cli] Strategy loaded');
+        selectedInstruments = await promptInstrumentSelection(availableInstruments, '[cli]');
       } catch (err) {
-        log.error({ err, strategy: strategyArg }, '[cli] Failed to load strategy');
+        log.error({ err }, '[cli] Instrument selection failed');
         process.exit(1);
       }
     }
 
-    log.info(
-      { instrument: config.instrument, timeframe: config.timeframe },
-      '[backtest] Fetching candles',
-    );
+    log.info({ instruments: selectedInstruments }, '[cli] Instruments selected');
 
-    const candles = await fetchAllCandles(db, config.instrument, config.timeframe);
+    // Run backtest for each instrument sequentially, collecting all trades
+    const allTrades: ExecutedTrade[] = [];
+    let totalFinalBalance = 0;
+    let totalStrategyErrors = 0;
+    let strategyName = strategyArg;
 
-    log.info({ count: candles.length }, '[backtest] Candles loaded');
+    for (const instrument of selectedInstruments) {
+      let strategy: StrategyRunner;
+      if (strategyArg === 'dummy') {
+        strategy = dummyStrategy;
+      } else {
+        try {
+          strategy = await loadStrategy(strategyArg as Parameters<typeof loadStrategy>[0], db, {
+            instrument,
+            timeframe: config.timeframe,
+            initialBalance,
+            ...(riskPct !== undefined && { riskPct }),
+            ...(tpMultiplier !== undefined && { tpMultiplier }),
+          });
+          strategyName = strategy.name;
+          log.info({ strategy: strategyArg, instrument }, '[cli] Strategy loaded');
+        } catch (err) {
+          log.error({ err, strategy: strategyArg, instrument }, '[cli] Failed to load strategy');
+          process.exit(1);
+        }
+      }
 
-    if (candles.length < 3) {
-      log.error({ count: candles.length }, '[backtest] Not enough candles to run a backtest');
-      process.exit(1);
-    }
+      log.info(
+        { instrument, timeframe: config.timeframe },
+        '[backtest] Fetching candles',
+      );
 
-    log.info(
-      {
-        strategy: strategy.name,
-        version: strategy.version,
-        initialBalance,
-        headless,
-        haltOnError,
-      },
-      '[backtest] Starting',
-    );
+      const candles = await fetchAllCandles(db, instrument, config.timeframe);
 
-    const runner = new BacktestRunner({
-      candles,
-      strategy,
-      initialBalance,
-      haltOnStrategyError: haltOnError,
-    });
+      log.info({ count: candles.length, instrument }, '[backtest] Candles loaded');
 
-    runner.on('tradeClosed', (trade) => {
+      if (candles.length < 3) {
+        log.error({ count: candles.length, instrument }, '[backtest] Not enough candles to run a backtest');
+        process.exit(1);
+      }
+
       log.info(
         {
-          id: trade.id,
-          direction: trade.direction,
-          exitReason: trade.exitReason,
-          pnlDollar: trade.pnlDollar.toFixed(2),
-          pnlPercent: trade.pnlPercent.toFixed(2),
+          strategy: strategy.name,
+          version: strategy.version,
+          instrument,
+          initialBalance,
+          headless,
+          haltOnError,
         },
-        '[trade] Closed',
+        '[backtest] Starting',
       );
-    });
 
-    runner.on('strategyError', (err, candles) => {
-      log.warn(
-        { err, c3Time: candles[2].open_time },
-        '[strategy] Error in analyze() — skipping candle',
+      const runner = new BacktestRunner({
+        candles,
+        strategy,
+        initialBalance,
+        instrument,
+        haltOnStrategyError: haltOnError,
+      });
+
+      runner.on('tradeClosed', (trade) => {
+        log.info(
+          {
+            id: trade.id,
+            instrument: trade.instrument,
+            direction: trade.direction,
+            exitReason: trade.exitReason,
+            pnlDollar: trade.pnlDollar.toFixed(2),
+            pnlPercent: trade.pnlPercent.toFixed(2),
+          },
+          '[trade] Closed',
+        );
+      });
+
+      runner.on('strategyError', (err, candles) => {
+        log.warn(
+          { err, instrument, c3Time: candles[2].open_time },
+          '[strategy] Error in analyze() — skipping candle',
+        );
+      });
+
+      const results = runner.run();
+
+      log.info(
+        {
+          instrument,
+          initialBalance: results.initialBalance.toFixed(2),
+          finalBalance: results.finalBalance.toFixed(2),
+          totalPnl: results.totalPnlDollar.toFixed(2),
+          totalTrades: results.totalTrades,
+          wins: results.winCount,
+          losses: results.lossCount,
+          winRate: `${results.winRate.toFixed(1)}%`,
+          strategyErrors: results.strategyErrorCount,
+        },
+        '[backtest] Complete',
       );
-    });
 
-    const results = runner.run();
+      allTrades.push(...results.trades);
+      totalFinalBalance += results.finalBalance;
+      totalStrategyErrors += results.strategyErrorCount;
+    }
+
+    const totalInitialBalance = initialBalance * selectedInstruments.length;
 
     log.info(
       {
-        initialBalance: results.initialBalance.toFixed(2),
-        finalBalance: results.finalBalance.toFixed(2),
-        totalPnl: results.totalPnlDollar.toFixed(2),
-        totalTrades: results.totalTrades,
-        wins: results.winCount,
-        losses: results.lossCount,
-        winRate: `${results.winRate.toFixed(1)}%`,
-        strategyErrors: results.strategyErrorCount,
+        instruments: selectedInstruments,
+        totalInitialBalance: totalInitialBalance.toFixed(2),
+        totalFinalBalance: totalFinalBalance.toFixed(2),
+        totalTrades: allTrades.length,
+        strategyErrors: totalStrategyErrors,
       },
-      '[backtest] Complete',
+      '[backtest] All instruments complete',
     );
 
     // In headless mode (or when --output is specified), auto-save results
     if (headless || outputArg) {
       saveResults(
-        strategy.name,
-        results.trades,
-        results.initialBalance,
-        results.finalBalance,
-        results.strategyErrorCount,
+        strategyName,
+        selectedInstruments,
+        allTrades,
+        initialBalance,
+        totalInitialBalance,
+        totalFinalBalance,
+        totalStrategyErrors,
         outputArg,
       );
     }

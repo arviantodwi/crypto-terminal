@@ -8,6 +8,7 @@ interface TradeLogProps {
 
 const COL_WIDTHS = {
   num:        6,
+  ticker:     10,
   time:       16,
   type:       5,
   entry:      12,
@@ -29,17 +30,19 @@ function HeaderRow() {
   return (
     <Box paddingX={1}>
       <Text bold color="gray">
-        {pad('#',      COL_WIDTHS.num,    false)}
+        {pad('#',       COL_WIDTHS.num,        false)}
         {'  '}
-        {pad('Time',   COL_WIDTHS.time,   false)}
+        {pad('Ticker',  COL_WIDTHS.ticker,     false)}
         {'  '}
-        {pad('Type',   COL_WIDTHS.type,   false)}
+        {pad('Time',    COL_WIDTHS.time,       false)}
         {'  '}
-        {pad('Entry',  COL_WIDTHS.entry,  true)}
+        {pad('Type',    COL_WIDTHS.type,       false)}
         {'  '}
-        {pad('SL',     COL_WIDTHS.sl,     true)}
+        {pad('Entry',   COL_WIDTHS.entry,      true)}
         {'  '}
-        {pad('TP',     COL_WIDTHS.tp,     true)}
+        {pad('SL',      COL_WIDTHS.sl,         true)}
+        {'  '}
+        {pad('TP',      COL_WIDTHS.tp,         true)}
         {'  '}
         {pad('Exit',    COL_WIDTHS.exit,       true)}
         {'  '}
@@ -47,7 +50,7 @@ function HeaderRow() {
         {'  '}
         {pad('P&L $',   COL_WIDTHS.pnlDollar,  true)}
         {'  '}
-        {pad('P&L %',    COL_WIDTHS.pnlPct,     true)}
+        {pad('P&L %',   COL_WIDTHS.pnlPct,     true)}
         {'  '}
         {pad('Result',  COL_WIDTHS.result,     false)}
       </Text>
@@ -64,34 +67,36 @@ function TradeRow({ trade }: { trade: ExecutedTrade }) {
   return (
     <Box paddingX={1}>
       <Text>
-        {pad(String(trade.id), COL_WIDTHS.num, false)}
+        {pad(String(trade.id),                              COL_WIDTHS.num,        false)}
         {'  '}
-        {pad(formatTimestamp(trade.entryTimestamp), COL_WIDTHS.time, false)}
+        {pad(trade.instrument,                              COL_WIDTHS.ticker,     false)}
+        {'  '}
+        {pad(formatTimestamp(trade.entryTimestamp),         COL_WIDTHS.time,       false)}
         {'  '}
         <Text color={directionColor}>
-          {pad(trade.direction, COL_WIDTHS.type, false)}
+          {pad(trade.direction,                             COL_WIDTHS.type,       false)}
         </Text>
         {'  '}
-        {pad(formatCurrency(trade.entryPrice),      COL_WIDTHS.entry,       true)}
+        {pad(formatCurrency(trade.entryPrice),              COL_WIDTHS.entry,      true)}
         {'  '}
-        {pad(formatCurrency(trade.slPrice),         COL_WIDTHS.sl,          true)}
+        {pad(formatCurrency(trade.slPrice),                 COL_WIDTHS.sl,         true)}
         {'  '}
-        {pad(formatCurrency(trade.tpPrice),         COL_WIDTHS.tp,          true)}
+        {pad(formatCurrency(trade.tpPrice),                 COL_WIDTHS.tp,         true)}
         {'  '}
-        {pad(formatCurrency(trade.exitPrice),       COL_WIDTHS.exit,        true)}
+        {pad(formatCurrency(trade.exitPrice),               COL_WIDTHS.exit,       true)}
         {'  '}
-        {pad(formatCurrency(trade.dollarRisk),      COL_WIDTHS.riskDollar,  true)}
+        {pad(formatCurrency(trade.dollarRisk),              COL_WIDTHS.riskDollar, true)}
         {'  '}
         <Text color={pnlColor}>
-          {pad(pnlDollarStr,                        COL_WIDTHS.pnlDollar,   true)}
+          {pad(pnlDollarStr,                                COL_WIDTHS.pnlDollar,  true)}
         </Text>
         {'  '}
         <Text color={pnlColor}>
-          {pad(formatPercent(trade.pnlPercent),     COL_WIDTHS.pnlPct,      true)}
+          {pad(formatPercent(trade.pnlPercent),             COL_WIDTHS.pnlPct,     true)}
         </Text>
         {'  '}
         <Text color={isWin ? 'green' : 'red'}>
-          {pad(isWin ? '✓ TP' : '✗ SL', COL_WIDTHS.result, false)}
+          {pad(isWin ? '✓ TP' : '✗ SL',                    COL_WIDTHS.result,     false)}
         </Text>
       </Text>
     </Box>
@@ -111,7 +116,7 @@ export function TradeLog({ trades }: TradeLogProps) {
           <Text color="gray">No trades yet</Text>
         </Box>
       ) : (
-        trades.map((trade) => <TradeRow key={trade.id} trade={trade} />)
+        trades.map((trade) => <TradeRow key={`${trade.instrument}-${trade.id}`} trade={trade} />)
       )}
     </Box>
   );

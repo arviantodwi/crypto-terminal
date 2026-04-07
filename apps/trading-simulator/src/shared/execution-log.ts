@@ -63,6 +63,7 @@ export class InMemoryTradeLog implements TradeLog {
 
     const headers = [
       'id',
+      'instrument',
       'strategyName',
       'strategyVersion',
       'entryTimestamp',
@@ -83,6 +84,7 @@ export class InMemoryTradeLog implements TradeLog {
     const rows = this.trades.map((t) => {
       const cells = [
         t.id,
+        csvEscape(t.instrument),
         csvEscape(t.strategyName),
         csvEscape(t.strategyVersion),
         t.entryTimestamp.toISOString(),

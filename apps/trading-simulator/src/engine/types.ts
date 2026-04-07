@@ -31,6 +31,7 @@ export interface TradeSignal {
 
 export interface ExecutedTrade {
   id: number;
+  instrument: string;
   entryTimestamp: Date;
   exitTimestamp: Date;
   direction: 'LONG' | 'SHORT';
