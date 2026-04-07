@@ -5,6 +5,7 @@ interface ConfigurationProps {
   initialBalance: number;
   currentBalance: number;
   riskPercent: number;
+  effectiveRiskPct?: number;
   tpMultiplier: number;
   currentTimestamp: Date;
   candlesProcessed: number;
@@ -25,6 +26,7 @@ export function Configuration({
   initialBalance,
   currentBalance,
   riskPercent,
+  effectiveRiskPct,
   tpMultiplier,
   currentTimestamp,
   candlesProcessed,
@@ -51,8 +53,12 @@ export function Configuration({
         value={formatCurrency(currentBalance)}
         valueColor={balanceColor}
       />
-      <Row label="Risk / Trade" value={formatPercent(riskPercent)} />
-      <Row label="TP Multiplier" value={`${tpMultiplier}x`} />
+      <Row
+        label="Risk / Trade"
+        value={formatPercent(effectiveRiskPct ?? riskPercent)}
+        valueColor={effectiveRiskPct !== undefined && effectiveRiskPct !== riskPercent ? 'yellow' : undefined}
+      />
+      <Row label="TP Multiplier" value={`${tpMultiplier.toFixed(2)}x`} />
       <Row
         label="Current Time"
         value={timestampValid ? formatTimestamp(currentTimestamp) : '—'}
