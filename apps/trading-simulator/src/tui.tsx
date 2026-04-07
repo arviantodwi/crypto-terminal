@@ -32,6 +32,7 @@ const riskArg = args.find((a) => a.startsWith('--risk='))?.split('=')[1];
 const tpArg = args.find((a) => a.startsWith('--tp-multiplier='))?.split('=')[1];
 const instrumentsArg = args.find((a) => a.startsWith('--instruments='))?.split('=')[1];
 const sharedBalance = args.includes('--shared-balance');
+const maxOpenArg = args.find((a) => a.startsWith('--max-open='))?.split('=')[1];
 
 const initialBalance = (() => {
   if (balanceArg !== undefined) {
@@ -62,6 +63,18 @@ const tpMultiplier = (() => {
     const v = Number(tpArg);
     if (isNaN(v) || v <= 0) {
       process.stderr.write(`[tui] --tp-multiplier must be a positive number, got: ${tpArg}\n`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return undefined;
+})();
+
+const maxOpen = (() => {
+  if (maxOpenArg !== undefined) {
+    const v = Number(maxOpenArg);
+    if (!Number.isInteger(v) || v < 1) {
+      process.stderr.write(`[tui] --max-open must be a positive integer, got: ${maxOpenArg}\n`);
       process.exit(1);
     }
     return v;
@@ -149,7 +162,7 @@ async function main() {
       : initialBalance / selectedInstruments.length;
 
     process.stdout.write(
-      `[tui] Balance mode: ${sharedBalance ? 'shared' : 'split'} (total: ${initialBalance}, per-instrument: ${perInstrumentBalance.toFixed(2)})\n`,
+      `[tui] Balance mode: ${sharedBalance ? 'shared' : 'split'} (total: ${initialBalance}, per-instrument: ${perInstrumentBalance.toFixed(2)}), maxOpen: ${maxOpen ?? 'unlimited'}\n`,
     );
 
     // Load strategy and candles for each instrument
@@ -202,6 +215,7 @@ async function main() {
         perInstrumentBalance={perInstrumentBalance}
         riskPercent={riskPct ?? BASE_STRATEGY_CONFIG.riskPct}
         tpMultiplier={tpMultiplier ?? BASE_STRATEGY_CONFIG.tpMultiplier}
+        maxOpen={maxOpen}
       />,
     );
   } catch (err) {

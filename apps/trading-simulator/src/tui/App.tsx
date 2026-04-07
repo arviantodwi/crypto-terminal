@@ -19,6 +19,7 @@ export function App({
   perInstrumentBalance,
   riskPercent,
   tpMultiplier,
+  maxOpen,
 }: TuiAppProps) {
   const { exit } = useApp();
 
@@ -32,7 +33,7 @@ export function App({
     saveResults,
     increaseSpeed,
     decreaseSpeed,
-  } = useBacktest(instruments, initialBalance, sharedBalance, perInstrumentBalance);
+  } = useBacktest(instruments, initialBalance, sharedBalance, perInstrumentBalance, maxOpen);
 
   useKeyboard({
     status: state.status,

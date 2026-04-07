@@ -184,6 +184,11 @@ export interface MultiInstrumentBacktestRunnerOptions {
    */
   sharedBalance?: boolean;
   haltOnStrategyError?: boolean;
+  /**
+   * Maximum number of open positions allowed at any time across all instruments.
+   * When undefined, any number of positions can be open simultaneously.
+   */
+  maxOpen?: number;
 }
 
 export interface MultiBacktestEvents {
@@ -207,6 +212,7 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
   private readonly initialBalance: number;
   private readonly sharedBalance: boolean;
   private readonly haltOnStrategyError: boolean;
+  private readonly maxOpen?: number;
 
   constructor(options: MultiInstrumentBacktestRunnerOptions) {
     super();
@@ -215,6 +221,7 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
     this.initialBalance = options.initialBalance;
     this.sharedBalance = options.sharedBalance ?? true;
     this.haltOnStrategyError = options.haltOnStrategyError ?? false;
+    this.maxOpen = options.maxOpen;
   }
 
   run(): MultiInstrumentBacktestResults {
@@ -235,7 +242,13 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
 
     const timeSync = new TimeSync(this.instrumentCandles);
     let strategyErrorCount = 0;
+    let globalOpenCount = 0;
     let tick: TimeSyncTick | null;
+
+    const canOpenPosition = (): boolean => {
+      if (this.maxOpen === undefined) return true;
+      return globalOpenCount < this.maxOpen;
+    };
 
     while ((tick = timeSync.next()) !== null) {
       for (const [instrument, window] of tick.windows) {
@@ -249,12 +262,13 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
           if (slHit || tpHit) {
             const trades = portfolio.getTrades();
             const closedTrade = trades[trades.length - 1]!;
+            globalOpenCount--;
             this.emit('tradeClosed', closedTrade);
             strategy.onTradeExecuted(closedTrade);
           }
         }
 
-        if (!portfolio.hasOpenPosition() && portfolio.getBalance() > 0) {
+        if (!portfolio.hasOpenPosition() && portfolio.getBalance() > 0 && canOpenPosition()) {
           let signal: TradeSignal | null = null;
           try {
             signal = strategy.analyze(window);
@@ -270,6 +284,7 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
             }
           }
           if (signal !== null) {
+            globalOpenCount++;
             portfolio.openPosition(signal, c3.open_time);
           }
         }

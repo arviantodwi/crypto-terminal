@@ -70,4 +70,5 @@ export interface TuiAppProps {
   perInstrumentBalance: number;
   riskPercent: number;
   tpMultiplier: number;
+  maxOpen?: number;
 }

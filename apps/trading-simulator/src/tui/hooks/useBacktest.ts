@@ -35,6 +35,8 @@ interface MultiRuntime {
   instruments: string[];
   done: boolean;
   sharedBalanceMode: boolean;
+  globalOpenCount: number;
+  maxOpen?: number;
 }
 
 // ── Pattern data extraction ───────────────────────────────────────────────────
@@ -107,6 +109,7 @@ export function useBacktest(
   initialBalance: number,
   sharedBalanceMode: boolean,
   perInstrumentBalance: number,
+  maxOpen?: number,
 ) {
   const [state, setState] = useState<BacktestState>(() =>
     buildInitialState(instruments, perInstrumentBalance),
@@ -161,18 +164,25 @@ export function useBacktest(
         // Check open position exit
         if (portfolio.hasOpenPosition()) {
           const slHit = portfolio.checkStopLoss(c3);
-          if (!slHit) portfolio.checkTakeProfit(c3);
+          const tpHit = !slHit && portfolio.checkTakeProfit(c3);
+          if (slHit || tpHit) {
+            runtime.globalOpenCount--;
+          }
         }
 
         // Analyze for new entry
+        const canOpenPosition = runtime.maxOpen === undefined || runtime.globalOpenCount < runtime.maxOpen;
         let signal: TradeSignal | null = null;
-        if (!portfolio.hasOpenPosition() && portfolio.getBalance() > 0) {
+        if (!portfolio.hasOpenPosition() && portfolio.getBalance() > 0 && canOpenPosition) {
           try {
             signal = strategy.analyze(window);
           } catch {
             strategyErrorCountRef.current++;
           }
-          if (signal) portfolio.openPosition(signal, c3.open_time);
+          if (signal) {
+            runtime.globalOpenCount++;
+            portfolio.openPosition(signal, c3.open_time);
+          }
         }
 
         // Collect trades closed this tick for this instrument
@@ -262,6 +272,8 @@ export function useBacktest(
         instruments: instruments.map((i) => i.instrument),
         done: false,
         sharedBalanceMode: true,
+        globalOpenCount: 0,
+        maxOpen,
       };
     } else {
       for (const { instrument, candles, strategy } of instruments) {
@@ -277,10 +289,12 @@ export function useBacktest(
         instruments: instruments.map((i) => i.instrument),
         done: false,
         sharedBalanceMode: false,
+        globalOpenCount: 0,
+        maxOpen,
       };
     }
     statusRef.current = 'IDLE';
-  }, [instruments, initialBalance, sharedBalanceMode, perInstrumentBalance]);
+  }, [instruments, initialBalance, sharedBalanceMode, perInstrumentBalance, maxOpen]);
 
   // ── Public controls ──────────────────────────────────────────────────────────
 

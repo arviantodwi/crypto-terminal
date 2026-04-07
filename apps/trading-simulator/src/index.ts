@@ -40,6 +40,7 @@ const instrumentsArg = getArg('--instruments=');
 const headless = hasFlag('--headless');
 const haltOnError = hasFlag('--halt-on-error');
 const sharedBalance = hasFlag('--shared-balance');
+const maxOpenArg = getArg('--max-open=');
 
 // CLI args override environment variables
 const initialBalance = (() => {
@@ -76,6 +77,18 @@ const tpMultiplier = (() => {
     return v;
   }
   return undefined; // use strategy default
+})();
+
+const maxOpen = (() => {
+  if (maxOpenArg !== undefined) {
+    const v = Number(maxOpenArg);
+    if (!Number.isInteger(v) || v < 1) {
+      console.error(`[cli] --max-open must be a positive integer, got: ${maxOpenArg}`);
+      process.exit(1);
+    }
+    return v;
+  }
+  return undefined;
 })();
 
 // ── Dummy strategy (no-op — always returns null) ──────────────────────────────
@@ -251,7 +264,7 @@ async function main() {
     }
 
     log.info(
-      { instruments: selectedInstruments, initialBalance, perInstrumentBalance, headless, haltOnError, sharedBalance },
+      { instruments: selectedInstruments, initialBalance, perInstrumentBalance, headless, haltOnError, sharedBalance, maxOpen },
       '[cli] Starting parallel multi-instrument run',
     );
 
@@ -261,6 +274,7 @@ async function main() {
       initialBalance,
       sharedBalance,
       haltOnStrategyError: haltOnError,
+      maxOpen,
     });
 
     runner.on('tradeClosed', (trade: ExecutedTrade) => {
