@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import type { OhlcCandle, BacktestResults, ExecutedTrade, StrategyRunner, TradeSignal } from './types.js';
 import { TimeMachine } from './time-machine.js';
+import { TimeSync, type TimeSyncTick } from './time-sync.js';
 import { Portfolio } from './portfolio.js';
 
 // ── Event map ─────────────────────────────────────────────────────────────────
@@ -151,6 +152,140 @@ export class BacktestRunner extends EventEmitter {
     // NOTE: listeners are not removed after 'done'. For long-lived processes
     // running multiple sequential backtests on the same instance, call
     // runner.removeAllListeners() between runs to prevent listener accumulation.
+    return results;
+  }
+}
+
+// ── Multi-instrument runner ────────────────────────────────────────────────────
+
+export interface MultiInstrumentBacktestResults {
+  initialBalance: number;
+  finalBalance: number;
+  totalTrades: number;
+  winCount: number;
+  lossCount: number;
+  breakEvenCount: number;
+  winRate: number;
+  totalPnlDollar: number;
+  strategyErrorCount: number;
+  trades: ExecutedTrade[];
+  /** Number of unique timestamps processed across all instruments. */
+  totalTimestamps: number;
+}
+
+export interface MultiInstrumentBacktestRunnerOptions {
+  instrumentCandles: Map<string, OhlcCandle[]>;
+  strategies: Map<string, StrategyRunner>;
+  initialBalance: number;
+  haltOnStrategyError?: boolean;
+}
+
+export interface MultiBacktestEvents {
+  tradeClosed: [trade: ExecutedTrade];
+  strategyError: [error: unknown, instrument: string, candles: [OhlcCandle, OhlcCandle, OhlcCandle]];
+  done: [results: MultiInstrumentBacktestResults];
+}
+
+/**
+ * Runs a backtest across multiple instruments simultaneously, aligned by
+ * timestamp. At each timestamp tick, every instrument that has a candle at
+ * that time is evaluated together, and all instruments share a single balance
+ * pool.
+ *
+ * This replaces sequential per-instrument runs where each instrument consumed
+ * an independent balance, causing misleading aggregate stats.
+ */
+export class MultiInstrumentBacktestRunner extends EventEmitter {
+  private readonly instrumentCandles: Map<string, OhlcCandle[]>;
+  private readonly strategies: Map<string, StrategyRunner>;
+  private readonly initialBalance: number;
+  private readonly haltOnStrategyError: boolean;
+
+  constructor(options: MultiInstrumentBacktestRunnerOptions) {
+    super();
+    this.instrumentCandles = options.instrumentCandles;
+    this.strategies = options.strategies;
+    this.initialBalance = options.initialBalance;
+    this.haltOnStrategyError = options.haltOnStrategyError ?? false;
+  }
+
+  run(): MultiInstrumentBacktestResults {
+    const sharedBalance = { value: this.initialBalance };
+    const portfolios = new Map<string, Portfolio>();
+    for (const [instrument] of this.instrumentCandles) {
+      portfolios.set(instrument, new Portfolio(sharedBalance, instrument));
+    }
+
+    const timeSync = new TimeSync(this.instrumentCandles);
+    let strategyErrorCount = 0;
+    let tick: TimeSyncTick | null;
+
+    while ((tick = timeSync.next()) !== null) {
+      for (const [instrument, window] of tick.windows) {
+        const portfolio = portfolios.get(instrument)!;
+        const strategy = this.strategies.get(instrument)!;
+        const c3 = window[2];
+
+        if (portfolio.hasOpenPosition()) {
+          const slHit = portfolio.checkStopLoss(c3);
+          const tpHit = !slHit && portfolio.checkTakeProfit(c3);
+          if (slHit || tpHit) {
+            const trades = portfolio.getTrades();
+            const closedTrade = trades[trades.length - 1]!;
+            this.emit('tradeClosed', closedTrade);
+            strategy.onTradeExecuted(closedTrade);
+          }
+        }
+
+        if (!portfolio.hasOpenPosition()) {
+          let signal: TradeSignal | null = null;
+          try {
+            signal = strategy.analyze(window);
+          } catch (err) {
+            strategyErrorCount++;
+            this.emit('strategyError', err, instrument, window);
+            if (this.haltOnStrategyError) {
+              throw new Error(
+                `[multi-backtest] Strategy for "${instrument}" threw — halting. ` +
+                  `Original error: ${err instanceof Error ? err.message : String(err)}`,
+                { cause: err },
+              );
+            }
+          }
+          if (signal !== null) {
+            portfolio.openPosition(signal, c3.open_time);
+          }
+        }
+      }
+    }
+
+    const allTrades: ExecutedTrade[] = [];
+    for (const portfolio of portfolios.values()) {
+      allTrades.push(...portfolio.getTrades());
+    }
+    // Sort by entry time so trades appear chronologically in results
+    allTrades.sort((a, b) => a.entryTimestamp.getTime() - b.entryTimestamp.getTime());
+
+    const winCount = allTrades.filter((t) => t.pnlDollar > 0).length;
+    const lossCount = allTrades.filter((t) => t.pnlDollar < 0).length;
+    const breakEvenCount = allTrades.filter((t) => t.pnlDollar === 0).length;
+    const totalPnlDollar = allTrades.reduce((sum, t) => sum + t.pnlDollar, 0);
+
+    const results: MultiInstrumentBacktestResults = {
+      initialBalance: this.initialBalance,
+      finalBalance: sharedBalance.value,
+      totalTrades: allTrades.length,
+      winCount,
+      lossCount,
+      breakEvenCount,
+      winRate: allTrades.length > 0 ? (winCount / allTrades.length) * 100 : 0,
+      totalPnlDollar,
+      strategyErrorCount,
+      trades: allTrades,
+      totalTimestamps: timeSync.total,
+    };
+
+    this.emit('done', results);
     return results;
   }
 }

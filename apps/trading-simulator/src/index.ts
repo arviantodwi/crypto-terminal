@@ -4,7 +4,7 @@ import pino from 'pino';
 import { config } from './config.js';
 import { createDb } from './db/client.js';
 import { fetchAllCandles, fetchAvailableInstruments } from './db/queries.js';
-import { BacktestRunner } from './engine/backtest-runner.js';
+import { MultiInstrumentBacktestRunner } from './engine/backtest-runner.js';
 import type { ExecutedTrade, OhlcCandle, StrategyRunner, TradeSignal } from './engine/types.js';
 import { calculateMetrics } from './shared/metrics.js';
 import { InMemoryTradeLog } from './shared/execution-log.js';
@@ -205,10 +205,9 @@ async function main() {
 
     log.info({ instruments: selectedInstruments }, '[cli] Instruments selected');
 
-    // Run backtest for each instrument sequentially, collecting all trades
-    const allTrades: ExecutedTrade[] = [];
-    let totalFinalBalance = 0;
-    let totalStrategyErrors = 0;
+    // Load strategies and candles for all instruments
+    const strategiesMap = new Map<string, StrategyRunner>();
+    const candlesMap = new Map<string, OhlcCandle[]>();
     let strategyName = strategyArg;
 
     for (const instrument of selectedInstruments) {
@@ -232,13 +231,8 @@ async function main() {
         }
       }
 
-      log.info(
-        { instrument, timeframe: config.timeframe },
-        '[backtest] Fetching candles',
-      );
-
+      log.info({ instrument, timeframe: config.timeframe }, '[backtest] Fetching candles');
       const candles = await fetchAllCandles(db, instrument, config.timeframe);
-
       log.info({ count: candles.length, instrument }, '[backtest] Candles loaded');
 
       if (candles.length < 3) {
@@ -246,80 +240,59 @@ async function main() {
         process.exit(1);
       }
 
-      log.info(
-        {
-          strategy: strategy.name,
-          version: strategy.version,
-          instrument,
-          initialBalance,
-          headless,
-          haltOnError,
-        },
-        '[backtest] Starting',
-      );
-
-      const runner = new BacktestRunner({
-        candles,
-        strategy,
-        initialBalance,
-        instrument,
-        haltOnStrategyError: haltOnError,
-      });
-
-      runner.on('tradeClosed', (trade) => {
-        log.info(
-          {
-            id: trade.id,
-            instrument: trade.instrument,
-            direction: trade.direction,
-            exitReason: trade.exitReason,
-            pnlDollar: trade.pnlDollar.toFixed(2),
-            pnlPercent: trade.pnlPercent.toFixed(2),
-          },
-          '[trade] Closed',
-        );
-      });
-
-      runner.on('strategyError', (err, candles) => {
-        log.warn(
-          { err, instrument, c3Time: candles[2].open_time },
-          '[strategy] Error in analyze() — skipping candle',
-        );
-      });
-
-      const results = runner.run();
-
-      log.info(
-        {
-          instrument,
-          initialBalance: results.initialBalance.toFixed(2),
-          finalBalance: results.finalBalance.toFixed(2),
-          totalPnl: results.totalPnlDollar.toFixed(2),
-          totalTrades: results.totalTrades,
-          wins: results.winCount,
-          losses: results.lossCount,
-          winRate: `${results.winRate.toFixed(1)}%`,
-          strategyErrors: results.strategyErrorCount,
-        },
-        '[backtest] Complete',
-      );
-
-      allTrades.push(...results.trades);
-      totalFinalBalance += results.finalBalance;
-      totalStrategyErrors += results.strategyErrorCount;
+      strategiesMap.set(instrument, strategy);
+      candlesMap.set(instrument, candles);
     }
 
-    const totalInitialBalance = initialBalance * selectedInstruments.length;
+    log.info(
+      { instruments: selectedInstruments, initialBalance, headless, haltOnError },
+      '[backtest] Starting parallel multi-instrument run',
+    );
+
+    const runner = new MultiInstrumentBacktestRunner({
+      instrumentCandles: candlesMap,
+      strategies: strategiesMap,
+      initialBalance,
+      haltOnStrategyError: haltOnError,
+    });
+
+    runner.on('tradeClosed', (trade: ExecutedTrade) => {
+      log.info(
+        {
+          id: trade.id,
+          instrument: trade.instrument,
+          direction: trade.direction,
+          exitReason: trade.exitReason,
+          pnlDollar: trade.pnlDollar.toFixed(2),
+          pnlPercent: trade.pnlPercent.toFixed(2),
+        },
+        '[trade] Closed',
+      );
+    });
+
+    runner.on('strategyError', (err: unknown, instrument: string, candles: [OhlcCandle, OhlcCandle, OhlcCandle]) => {
+      log.warn(
+        { err, instrument, c3Time: candles[2].open_time },
+        '[strategy] Error in analyze() — skipping candle',
+      );
+    });
+
+    const results = runner.run();
 
     log.info(
       {
         instruments: selectedInstruments,
-        totalInitialBalance: totalInitialBalance.toFixed(2),
-        totalFinalBalance: totalFinalBalance.toFixed(2),
-        totalTrades: allTrades.length,
-        strategyErrors: totalStrategyErrors,
+        totalTimestamps: results.totalTimestamps,
+        initialBalance: results.initialBalance.toFixed(2),
+        finalBalance: results.finalBalance.toFixed(2),
+        totalPnl: results.totalPnlDollar.toFixed(2),
+        totalTrades: results.totalTrades,
+        wins: results.winCount,
+        losses: results.lossCount,
+        winRate: `${results.winRate.toFixed(1)}%`,
+        strategyErrors: results.strategyErrorCount,
       },
-      '[backtest] All instruments complete',
+      '[backtest] Complete',
     );
 
     // In headless mode (or when --output is specified), auto-save results
@@ -327,11 +300,11 @@ async function main() {
       saveResults(
         strategyName,
         selectedInstruments,
-        allTrades,
+        results.trades,
         initialBalance,
-        totalInitialBalance,
-        totalFinalBalance,
-        totalStrategyErrors,
+        initialBalance,
+        results.finalBalance,
+        results.strategyErrorCount,
         outputArg,
       );
     }

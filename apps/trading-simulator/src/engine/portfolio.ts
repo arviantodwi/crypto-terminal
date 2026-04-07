@@ -18,18 +18,32 @@ interface OpenPosition {
  *   - SL hit  → pnlDollar = -dollarRisk
  *   - TP hit  → pnlDollar = dollarRisk × (tp_distance / sl_distance)
  */
+/** Shared mutable balance reference for multi-instrument portfolios. */
+export interface BalanceRef {
+  value: number;
+}
+
 export class Portfolio {
-  private balance: number;
+  private readonly balanceRef: BalanceRef;
   private position: OpenPosition | null = null;
   private readonly completedTrades: ExecutedTrade[] = [];
   private tradeIdCounter = 0;
   private readonly instrument: string;
 
-  constructor(initialBalance: number, instrument = '') {
-    if (initialBalance <= 0) {
-      throw new Error(`initialBalance must be positive, got ${initialBalance}`);
+  /**
+   * @param balanceOrRef - Pass a `number` for a standalone portfolio, or a
+   *   shared `{ value: number }` object to link multiple portfolios to one
+   *   balance pool (multi-instrument mode).
+   */
+  constructor(balanceOrRef: number | BalanceRef, instrument = '') {
+    if (typeof balanceOrRef === 'number') {
+      if (balanceOrRef <= 0) {
+        throw new Error(`initialBalance must be positive, got ${balanceOrRef}`);
+      }
+      this.balanceRef = { value: balanceOrRef };
+    } else {
+      this.balanceRef = balanceOrRef;
     }
-    this.balance = initialBalance;
     this.instrument = instrument;
   }
 
@@ -131,7 +145,7 @@ export class Portfolio {
     const pnlDollar =
       slDistance > 0 ? dollarRisk * (exitDistance / slDistance) : 0;
 
-    const pnlPercent = this.balance > 0 ? (pnlDollar / this.balance) * 100 : 0;
+    const pnlPercent = this.balanceRef.value > 0 ? (pnlDollar / this.balanceRef.value) * 100 : 0;
 
     // Note: `leverage` is stored as metadata only — it is not applied to position
     // sizing here. P&L is driven entirely by dollarRisk and price distance, so
@@ -154,7 +168,7 @@ export class Portfolio {
       metadata,
     };
 
-    this.balance += pnlDollar;
+    this.balanceRef.value += pnlDollar;
     this.completedTrades.push(trade);
     this.position = null;
 
@@ -172,7 +186,7 @@ export class Portfolio {
   }
 
   getBalance(): number {
-    return this.balance;
+    return this.balanceRef.value;
   }
 
   getTrades(): ExecutedTrade[] {

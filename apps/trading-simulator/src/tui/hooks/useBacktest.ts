@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { classifyCandle } from '@crypto-terminal/trade-formula';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import type { OhlcCandle, ExecutedTrade, StrategyRunner, TradeSignal } from '../../engine/types.js';
-import { TimeMachine } from '../../engine/time-machine.js';
-import { Portfolio } from '../../engine/portfolio.js';
+import { TimeSync } from '../../engine/time-sync.js';
+import { Portfolio, type BalanceRef } from '../../engine/portfolio.js';
 import { calculateMetrics } from '../../shared/metrics.js';
 import { InMemoryTradeLog } from '../../shared/execution-log.js';
 import type { BacktestState, BacktestStatus, PatternAnalysisData, SpeedLevel, InstrumentData } from '../types.js';
@@ -25,13 +25,14 @@ const SPEED_CONFIG: Record<SpeedLevel, SpeedConfig> = {
 
 export const SPEED_LEVELS: SpeedLevel[] = [1, 10, 100, 1000, 0];
 
-// ── Per-instrument runtime state ──────────────────────────────────────────────
+// ── Synchronized multi-instrument runtime state ───────────────────────────────
 
-interface InstrumentRuntime {
-  instrument: string;
-  strategy: StrategyRunner;
-  timeMachine: TimeMachine;
-  portfolio: Portfolio;
+interface MultiRuntime {
+  timeSync: TimeSync;
+  sharedBalance: BalanceRef;
+  portfolios: Map<string, Portfolio>;
+  strategies: Map<string, StrategyRunner>;
+  instruments: string[];
   done: boolean;
 }
 
@@ -77,15 +78,19 @@ function extractPatternData(
 // ── Initial state ─────────────────────────────────────────────────────────────
 
 function buildInitialState(instruments: InstrumentData[], initialBalance: number): BacktestState {
-  const totalCandles = instruments.reduce((sum, { candles }) => sum + candles.length, 0);
+  // Count unique timestamps across all instruments (what the unified timeline will have)
+  const seen = new Set<number>();
+  for (const { candles } of instruments) {
+    for (const c of candles) seen.add(c.open_time);
+  }
   return {
     status: 'IDLE',
     currentCandles: null,
     patternData: null,
     tradeSignal: null,
-    currentBalance: initialBalance * instruments.length,
+    currentBalance: initialBalance,
     candlesProcessed: 0,
-    totalCandles,
+    totalCandles: seen.size,
     currentTimestamp: new Date(0),
     progress: 0,
     trades: [],
@@ -105,7 +110,7 @@ export function useBacktest(
   );
   const [speed, setSpeedState] = useState<SpeedLevel>(10);
 
-  const runtimesRef = useRef<InstrumentRuntime[]>([]);
+  const runtimeRef = useRef<MultiRuntime | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusRef = useRef<BacktestStatus>('IDLE');
   const speedRef = useRef<SpeedLevel>(10);
@@ -121,35 +126,34 @@ export function useBacktest(
     }
   }, []);
 
-  // ── Tick: process N candles per instrument and update state ──────────────────
+  // ── Tick: process N timestamps and update state ───────────────────────────────
 
   const tick = useCallback(() => {
-    const runtimes = runtimesRef.current;
-    if (runtimes.length === 0 || statusRef.current !== 'RUNNING') return;
+    const runtime = runtimeRef.current;
+    if (!runtime || runtime.done || statusRef.current !== 'RUNNING') return;
 
     const { batchSize } = SPEED_CONFIG[speedRef.current];
+    const { timeSync, sharedBalance, portfolios, strategies } = runtime;
 
     let lastWindow: [OhlcCandle, OhlcCandle, OhlcCandle] | null = null;
     let lastSignal: TradeSignal | null = null;
+    let lastTimestamp = 0;
     const batchNewTrades: ExecutedTrade[] = [];
 
-    for (const runtime of runtimes) {
-      if (runtime.done) continue;
+    for (let i = 0; i < batchSize; i++) {
+      const tick = timeSync.next();
+      if (!tick) {
+        runtime.done = true;
+        break;
+      }
 
-      const { timeMachine, portfolio, strategy } = runtime;
-      const prevTradeCount = portfolio.getTrades().length;
+      lastTimestamp = tick.timestamp;
 
-      let localLastWindow: [OhlcCandle, OhlcCandle, OhlcCandle] | null = null;
-      let localLastSignal: TradeSignal | null = null;
-
-      for (let i = 0; i < batchSize; i++) {
-        const window = timeMachine.next();
-        if (!window) {
-          runtime.done = true;
-          break;
-        }
-
-        const [, , c3] = window;
+      for (const [instrument, window] of tick.windows) {
+        const portfolio = portfolios.get(instrument)!;
+        const strategy = strategies.get(instrument)!;
+        const c3 = window[2];
+        const prevTradeCount = portfolio.getTrades().length;
 
         // Check open position exit
         if (portfolio.hasOpenPosition()) {
@@ -168,21 +172,16 @@ export function useBacktest(
           if (signal) portfolio.openPosition(signal, c3.open_time);
         }
 
-        localLastWindow = window;
-        localLastSignal = signal;
-      }
+        // Collect trades closed this tick for this instrument
+        const allTrades = portfolio.getTrades();
+        const newTrades = allTrades.slice(prevTradeCount);
+        for (const trade of newTrades) {
+          strategy.onTradeExecuted(trade);
+          batchNewTrades.push(trade);
+        }
 
-      // Notify strategy of trades closed during this batch
-      const allTrades = portfolio.getTrades();
-      const newTrades = allTrades.slice(prevTradeCount);
-      for (const trade of newTrades) {
-        strategy.onTradeExecuted(trade);
-        batchNewTrades.push(trade);
-      }
-
-      if (localLastWindow) {
-        lastWindow = localLastWindow;
-        lastSignal = localLastSignal;
+        lastWindow = window;
+        lastSignal = signal;
       }
     }
 
@@ -192,42 +191,33 @@ export function useBacktest(
       recentTradesRef.current = combined.length > 10 ? combined.slice(-10) : combined;
     }
 
-    const allDone = runtimes.every((r) => r.done);
-    if (allDone) {
+    if (runtime.done) {
       statusRef.current = 'COMPLETE';
       stopInterval();
     }
 
-    // Aggregate state across all instruments
-    const allTrades = runtimes.flatMap((r) => r.portfolio.getTrades());
-    const totalBalance = runtimes.reduce((sum, r) => sum + r.portfolio.getBalance(), 0);
+    // Aggregate all trades for metrics
+    const allTrades = [...portfolios.values()].flatMap((p) => p.getTrades());
 
-    // Sum progress across all instruments
-    let totalProcessed = 0;
-    let totalCandlesSum = 0;
-    for (const runtime of runtimes) {
-      const progressStr = runtime.timeMachine.progress();
-      const parts = progressStr.split(' / ');
-      const rawProcessed = parseInt((parts[0] ?? '0').replace(/,/g, ''), 10);
-      totalProcessed += Number.isNaN(rawProcessed) ? 0 : rawProcessed;
-      totalCandlesSum += runtime.timeMachine.total;
-    }
+    const totalProcessed = timeSync.processed;
+    const totalCandlesSum = timeSync.total;
+    const firstStrategy = strategies.values().next().value as StrategyRunner | undefined;
 
     setState({
-      status: allDone ? 'COMPLETE' : statusRef.current,
+      status: runtime.done ? 'COMPLETE' : statusRef.current,
       currentCandles: lastWindow,
       patternData: lastWindow ? extractPatternData(lastWindow, lastSignal) : null,
       tradeSignal: lastSignal,
-      currentBalance: totalBalance,
+      currentBalance: sharedBalance.value,
       candlesProcessed: totalProcessed,
       totalCandles: totalCandlesSum,
-      currentTimestamp: lastWindow ? new Date(lastWindow[2].open_time * 1000) : new Date(0),
+      currentTimestamp: lastTimestamp > 0 ? new Date(lastTimestamp * 1000) : new Date(0),
       progress: totalCandlesSum > 0 ? (totalProcessed / totalCandlesSum) * 100 : 0,
       trades: recentTradesRef.current,
-      metrics: calculateMetrics(allTrades, initialBalance * runtimes.length),
+      metrics: calculateMetrics(allTrades, initialBalance),
       strategyErrorCount: strategyErrorCountRef.current,
-      effectiveTpMultiplier: runtimes[0]?.strategy.getEffectiveTpMultiplier?.(),
-      effectiveRiskPct: runtimes[0]?.strategy.getEffectiveRiskPct?.(),
+      effectiveTpMultiplier: firstStrategy?.getEffectiveTpMultiplier?.(),
+      effectiveRiskPct: firstStrategy?.getEffectiveRiskPct?.(),
     });
   }, [initialBalance, stopInterval]);
 
@@ -245,13 +235,25 @@ export function useBacktest(
   // ── Init / reset engine state ────────────────────────────────────────────────
 
   const initEngine = useCallback(() => {
-    runtimesRef.current = instruments.map(({ instrument, candles, strategy }) => ({
-      instrument,
-      strategy,
-      timeMachine: new TimeMachine(candles),
-      portfolio: new Portfolio(initialBalance, instrument),
+    const sharedBalance: BalanceRef = { value: initialBalance };
+    const portfolios = new Map<string, Portfolio>();
+    const strategies = new Map<string, StrategyRunner>();
+    const instrumentCandlesMap = new Map<string, OhlcCandle[]>();
+
+    for (const { instrument, candles, strategy } of instruments) {
+      portfolios.set(instrument, new Portfolio(sharedBalance, instrument));
+      strategies.set(instrument, strategy);
+      instrumentCandlesMap.set(instrument, candles);
+    }
+
+    runtimeRef.current = {
+      timeSync: new TimeSync(instrumentCandlesMap),
+      sharedBalance,
+      portfolios,
+      strategies,
+      instruments: instruments.map((i) => i.instrument),
       done: false,
-    }));
+    };
     statusRef.current = 'IDLE';
   }, [instruments, initialBalance]);
 
@@ -280,8 +282,11 @@ export function useBacktest(
 
   const restart = useCallback(() => {
     stopInterval();
-    for (const runtime of runtimesRef.current) {
-      runtime.strategy.reset();
+    const runtime = runtimeRef.current;
+    if (runtime) {
+      for (const strategy of runtime.strategies.values()) {
+        strategy.reset();
+      }
     }
     initEngine();
     recentTradesRef.current = [];
@@ -290,18 +295,20 @@ export function useBacktest(
   }, [stopInterval, initEngine, instruments, initialBalance]);
 
   const saveResults = useCallback(() => {
-    const runtimes = runtimesRef.current;
-    const allTrades = runtimes.flatMap((r) => r.portfolio.getTrades());
-    const totalBalance = runtimes.reduce((sum, r) => sum + r.portfolio.getBalance(), 0);
-    const totalInitialBalance = initialBalance * runtimes.length;
-    const metrics = calculateMetrics(allTrades, totalInitialBalance);
+    const runtime = runtimeRef.current;
+    if (!runtime) return;
+
+    const allTrades = [...runtime.portfolios.values()].flatMap((p) => p.getTrades());
+    const totalBalance = runtime.sharedBalance.value;
+    const metrics = calculateMetrics(allTrades, initialBalance);
     const timestamp = new Date().toISOString();
     const safeTimestamp = timestamp.replace(/[:.]/g, '-').slice(0, 19);
     const exportDir = './export';
     mkdirSync(exportDir, { recursive: true });
 
-    const strategyName = runtimes[0]?.strategy.name ?? 'unknown';
-    const strategyVersion = runtimes[0]?.strategy.version ?? '0.0.0';
+    const firstStrategy = runtime.strategies.values().next().value as StrategyRunner | undefined;
+    const strategyName = firstStrategy?.name ?? 'unknown';
+    const strategyVersion = firstStrategy?.version ?? '0.0.0';
     const basename = `${exportDir}/backtest-${strategyName}-${safeTimestamp}`;
 
     // JSON
@@ -309,9 +316,8 @@ export function useBacktest(
       metadata: {
         strategy: strategyName,
         version: strategyVersion,
-        instruments: runtimes.map((r) => r.instrument),
+        instruments: runtime.instruments,
         initialBalance,
-        totalInitialBalance,
         finalBalance: totalBalance,
         runDate: timestamp,
       },
