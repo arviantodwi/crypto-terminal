@@ -300,6 +300,23 @@ async function main() {
 
     const results = runner.run();
 
+    // Per-instrument stats
+    console.log('\n═══════════════════════════════════════════════════════════');
+    console.log('              PER-INSTRUMENT STATS                  ');
+    console.log('═══════════════════════════════════════════════════');
+    console.log(' Instrument       │ Trades │ Win%   │ PnL         │ Risk%  │ TPx   ');
+    console.log('─────────────────┼────────┼────────┼─────────────┼────────┼───────');
+    for (const s of results.instrumentStats) {
+      const winRateStr = `${s.winRate.toFixed(1)}%`;
+      const pnlStr = s.pnlDollar >= 0 ? `$${s.pnlDollar.toFixed(2)}` : `-$${Math.abs(s.pnlDollar).toFixed(2)}`;
+      const riskStr = s.effectiveRiskPct !== undefined ? `${s.effectiveRiskPct.toFixed(1)}%` : '—';
+      const tpStr = s.effectiveTpMultiplier !== undefined ? `${s.effectiveTpMultiplier.toFixed(2)}` : '—';
+      console.log(
+        ` ${s.instrument.padEnd(15)} │ ${String(s.trades).padStart(6)} │ ${winRateStr.padStart(5)} │ ${pnlStr.padStart(10)} │ ${riskStr.padStart(6)} │ ${tpStr.padStart(5)} `,
+      );
+    }
+    console.log('═══════════════════════════════════════════════════');
+
     log.info(
       {
         instruments: selectedInstruments,

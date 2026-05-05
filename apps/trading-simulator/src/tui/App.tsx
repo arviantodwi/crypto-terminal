@@ -9,6 +9,7 @@ import { PerformanceMetrics } from './components/PerformanceMetrics.js';
 import { TradeLog } from './components/TradeLog.js';
 import { PatternDisplay } from './components/PatternDisplay.js';
 import { Footer } from './components/Footer.js';
+import { InstrumentStats } from './components/InstrumentStats.js';
 
 export function App({
   instruments,
@@ -91,6 +92,9 @@ export function App({
 
       {/* Footer */}
       <Footer status={state.status} speed={speed} />
+
+      {/* Per-instrument stats - always visible */}
+      <InstrumentStats stats={state.instrumentStats} />
     </Box>
   );
 }

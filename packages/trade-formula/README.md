@@ -39,12 +39,12 @@ Each closed candle is classified into one of 7 labels using `pct_change` and `bo
 
 ```
 function classifyCandle(pct_change, body_ratio):
-  if pct_change >  1.5 && body_ratio >= 0.5 → 'up_strong'
-  if pct_change >  0.5 && body_ratio >= 0.4 → 'up_medium'
-  if pct_change >  0.1 && body_ratio >= 0.3 → 'up_weak'
-  if pct_change < -1.5 && body_ratio >= 0.5 → 'down_strong'
-  if pct_change < -0.5 && body_ratio >= 0.4 → 'down_medium'
-  if pct_change < -0.1 && body_ratio >= 0.3 → 'down_weak'
+  if pct_change >  0.45 && body_ratio >= 0.5 → 'up_strong'
+  if pct_change >  0.20 && body_ratio >= 0.4 → 'up_medium'
+  if pct_change >  0.05 && body_ratio >= 0.3 → 'up_weak'
+  if pct_change < -0.45 && body_ratio >= 0.5 → 'down_strong'
+  if pct_change < -0.20 && body_ratio >= 0.4 → 'down_medium'
+  if pct_change < -0.05 && body_ratio >= 0.3 → 'down_weak'
   else → 'flat' (excluded from pattern matching)
 ```
 
@@ -440,11 +440,11 @@ This section traces a single trade from raw OHLC data through every step to fina
 
 | Candle | pct_change | body_ratio | Label |
 |---|---|---|---|
-| c1 | 0.463% (> 0.1, < 0.5) | 0.75 (≥ 0.3) | `up_weak` |
-| c2 | 0.384% (> 0.1, < 0.5) | 0.714 (≥ 0.3) | `up_weak` |
-| c3 | 0.612% (> 0.5) | 0.727 (≥ 0.4) | `up_medium` |
+| c1 | 0.463% (> 0.45) | 0.75 (≥ 0.5) | `up_strong` |
+| c2 | 0.384% (> 0.20, < 0.45) | 0.714 (≥ 0.4) | `up_medium` |
+| c3 | 0.612% (> 0.45) | 0.727 (≥ 0.5) | `up_strong` |
 
-**Pattern:** `[up_weak, up_weak, up_medium]`
+**Pattern:** `[up_strong, up_medium, up_strong]`
 
 ### Step 2 — Pattern Lookup & Probability Check
 
@@ -524,7 +524,7 @@ wide_sl_flag = false (0.514% < 3%)
 | Take Profit | $65,668.20 |
 | Leverage | 5x |
 | Dollar Risk | $25.70 |
-| Pattern | `[up_weak, up_weak, up_medium]` |
+| Pattern | `[up_strong, up_medium, up_strong]` |
 | Route | Trend |
 | Conviction | Moderate (73%) |
 | Selected Formula | T2 — Weighted Average |

@@ -15,7 +15,8 @@
       "mcp__figma-bridge__get_node",
       "mcp__figma-bridge__get_screenshot",
       "mcp__figma-bridge__get_selection",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm exec:*)"
     ]
   }
 }

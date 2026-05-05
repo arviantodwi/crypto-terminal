@@ -4,19 +4,19 @@ import type { ConvictionTier, Route } from './types.js';
 // All pct_change and body_ratio boundary values from the formulations document
 // (see README §1).
 
+// biome-ignore assist/source/useSortedKeys: Clarity
 export const CANDLE_THRESHOLDS = {
-  BODY_RATIO_MEDIUM: 0.4,
-
   // body_ratio boundaries (direction-agnostic — same threshold for up and down)
   BODY_RATIO_STRONG: 0.5,
+  BODY_RATIO_MEDIUM: 0.4,
   BODY_RATIO_WEAK: 0.3,
-  PCT_DOWN_MEDIUM: -0.5,
-  PCT_DOWN_STRONG: -1.5,
-  PCT_DOWN_WEAK: -0.1,
-  PCT_UP_MEDIUM: 0.5,
   // pct_change boundaries (signed — down values are negative)
-  PCT_UP_STRONG: 1.5,
-  PCT_UP_WEAK: 0.1,
+  PCT_DOWN_STRONG: -0.4,
+  PCT_DOWN_MEDIUM: -0.2,
+  PCT_DOWN_WEAK: -0.05,
+  PCT_UP_STRONG: 0.4,
+  PCT_UP_MEDIUM: 0.2,
+  PCT_UP_WEAK: 0.05,
 } as const;
 
 // ── Probability tier boundaries ──────────────────────────────────────────────
@@ -24,16 +24,19 @@ export const CANDLE_THRESHOLDS = {
 // (see README §2).
 
 export const PROBABILITY_TIERS = {
-  DOMINANT_MIN: 80,
-  HIGH_MIN: 75,
-  MODERATE_MIN: 68,
+  // DOMINANT_MIN: 71,
+  // HIGH_MIN: 63,
+  // MODERATE_MIN: 55,
+  DOMINANT_MIN: 60,
+  HIGH_MIN: 55,
+  MODERATE_MIN: 50,
 } as const;
 
 // ── Leverage constraints ─────────────────────────────────────────────────────
 // Binance requires ≥5 % margin → max 20x. Floor is always 1x (see README §9).
 
 export const LEVERAGE_CONSTRAINTS = {
-  MAX: 20,
+  MAX: 50,
   MIN: 1,
 } as const;
 

@@ -6,7 +6,7 @@ import { TimeSync } from '../../engine/time-sync.js';
 import { Portfolio, type BalanceRef } from '../../engine/portfolio.js';
 import { calculateMetrics } from '../../shared/metrics.js';
 import { InMemoryTradeLog } from '../../shared/execution-log.js';
-import type { BacktestState, BacktestStatus, PatternAnalysisData, SpeedLevel, InstrumentData } from '../types.js';
+import type { BacktestState, BacktestStatus, PatternAnalysisData, SpeedLevel, InstrumentData, PerInstrumentStats } from '../types.js';
 
 // ── Speed → { intervalMs, batchSize } ────────────────────────────────────────
 
@@ -99,6 +99,7 @@ function buildInitialState(instruments: InstrumentData[], initialBalance: number
     trades: [],
     metrics: calculateMetrics([], initialBalance),
     strategyErrorCount: 0,
+    instrumentStats: [],
   };
 }
 
@@ -221,6 +222,25 @@ export function useBacktest(
       ? (runtime.sharedBalance?.value ?? 0)
       : [...portfolios.values()].reduce((sum, p) => sum + p.getBalance(), 0);
 
+    // Calculate per-instrument stats
+    const instrumentStats: PerInstrumentStats[] = [];
+    for (const [instrument, portfolio] of portfolios) {
+      const trades = portfolio.getTrades();
+      const strategy = strategies.get(instrument)!;
+      const wins = trades.filter((t) => t.pnlDollar > 0).length;
+      instrumentStats.push({
+        instrument,
+        trades: trades.length,
+        wins,
+        losses: trades.length - wins,
+        winRate: trades.length > 0 ? (wins / trades.length) * 100 : 0,
+        pnlDollar: trades.reduce((sum, t) => sum + t.pnlDollar, 0),
+        finalBalance: portfolio.getBalance(),
+        effectiveRiskPct: strategy.getEffectiveRiskPct?.(),
+        effectiveTpMultiplier: strategy.getEffectiveTpMultiplier?.(),
+      });
+    }
+
     setState({
       status: runtime.done ? 'COMPLETE' : statusRef.current,
       currentCandles: lastWindow,
@@ -236,6 +256,7 @@ export function useBacktest(
       strategyErrorCount: strategyErrorCountRef.current,
       effectiveTpMultiplier: firstStrategy?.getEffectiveTpMultiplier?.(),
       effectiveRiskPct: firstStrategy?.getEffectiveRiskPct?.(),
+      instrumentStats,
     });
   }, [initialBalance, stopInterval]);
 

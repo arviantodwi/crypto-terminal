@@ -158,6 +158,18 @@ export class BacktestRunner extends EventEmitter {
 
 // ── Multi-instrument runner ────────────────────────────────────────────────────
 
+export interface PerInstrumentStats {
+  instrument: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  pnlDollar: number;
+  finalBalance: number;
+  effectiveRiskPct?: number;
+  effectiveTpMultiplier?: number;
+}
+
 export interface MultiInstrumentBacktestResults {
   initialBalance: number;
   finalBalance: number;
@@ -171,6 +183,7 @@ export interface MultiInstrumentBacktestResults {
   trades: ExecutedTrade[];
   /** Number of unique timestamps processed across all instruments. */
   totalTimestamps: number;
+  instrumentStats: PerInstrumentStats[];
 }
 
 export interface MultiInstrumentBacktestRunnerOptions {
@@ -307,6 +320,24 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
       ? portfolios.values().next().value?.getBalance() ?? 0
       : Array.from(portfolios.values()).reduce((sum, p) => sum + p.getBalance(), 0);
 
+    const instrumentStats: PerInstrumentStats[] = [];
+    for (const [instrument, portfolio] of portfolios) {
+      const trades = portfolio.getTrades();
+      const strategy = this.strategies.get(instrument)!;
+      const wins = trades.filter((t) => t.pnlDollar > 0).length;
+      instrumentStats.push({
+        instrument,
+        trades: trades.length,
+        wins,
+        losses: trades.length - wins,
+        winRate: trades.length > 0 ? (wins / trades.length) * 100 : 0,
+        pnlDollar: trades.reduce((sum, t) => sum + t.pnlDollar, 0),
+        finalBalance: portfolio.getBalance(),
+        effectiveRiskPct: strategy.getEffectiveRiskPct?.(),
+        effectiveTpMultiplier: strategy.getEffectiveTpMultiplier?.(),
+      });
+    }
+
     const results: MultiInstrumentBacktestResults = {
       initialBalance: this.initialBalance,
       finalBalance,
@@ -319,6 +350,7 @@ export class MultiInstrumentBacktestRunner extends EventEmitter {
       strategyErrorCount,
       trades: allTrades,
       totalTimestamps: timeSync.total,
+      instrumentStats,
     };
 
     this.emit('done', results);

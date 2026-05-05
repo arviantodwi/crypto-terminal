@@ -10,6 +10,20 @@ export interface InstrumentData {
   strategy: StrategyRunner;
 }
 
+// ── Per-instrument stats ────────────────────────────────────────────────
+
+export interface PerInstrumentStats {
+  instrument: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  pnlDollar: number;
+  finalBalance: number;
+  effectiveRiskPct?: number;
+  effectiveTpMultiplier?: number;
+}
+
 // ── Backtest status ────────────────────────────────────────────────────────────
 
 export type BacktestStatus = 'IDLE' | 'RUNNING' | 'PAUSED' | 'COMPLETE';
@@ -57,6 +71,8 @@ export interface BacktestState {
   effectiveTpMultiplier?: number;
   /** Live risk % — set when the strategy adapts it at runtime (e.g. v1.3), otherwise undefined. */
   effectiveRiskPct?: number;
+  /** Per-instrument stats for comparing instrument-level performance */
+  instrumentStats: PerInstrumentStats[];
 }
 
 // ── Props for the TUI App root component ─────────────────────────────────────

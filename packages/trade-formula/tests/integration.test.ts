@@ -105,10 +105,10 @@ const c3: OhlcCandle = {
 // ── Step 1 — Candle classification ───────────────────────────────────────────
 
 describe('Step 1 — Candle classification', () => {
-  it('classifies the 3-candle pattern as [up_weak, up_weak, up_medium]', () => {
-    expect(classifyCandle(c1.pct_change, c1.body_ratio)).toBe('up_weak');
-    expect(classifyCandle(c2.pct_change, c2.body_ratio)).toBe('up_weak');
-    expect(classifyCandle(c3.pct_change, c3.body_ratio)).toBe('up_medium');
+  it('classifies the 3-candle pattern as [up_strong, up_medium, up_strong]', () => {
+    expect(classifyCandle(c1.pct_change, c1.body_ratio)).toBe('up_strong');
+    expect(classifyCandle(c2.pct_change, c2.body_ratio)).toBe('up_medium');
+    expect(classifyCandle(c3.pct_change, c3.body_ratio)).toBe('up_strong');
   });
 });
 
@@ -285,9 +285,9 @@ describe('Full pipeline — §12 summary', () => {
   it('produces the exact trade parameters from README §12', () => {
     const { leverage, wide_sl_flag } = calcLeverage(RISK_PCT, sl_pct);
 
-    expect(classifyCandle(c1.pct_change, c1.body_ratio)).toBe('up_weak');
-    expect(classifyCandle(c2.pct_change, c2.body_ratio)).toBe('up_weak');
-    expect(classifyCandle(c3.pct_change, c3.body_ratio)).toBe('up_medium');
+    expect(classifyCandle(c1.pct_change, c1.body_ratio)).toBe('up_strong');
+    expect(classifyCandle(c2.pct_change, c2.body_ratio)).toBe('up_medium');
+    expect(classifyCandle(c3.pct_change, c3.body_ratio)).toBe('up_strong');
     expect(route).toBe('Trend');
     expect(conviction).toBe('Moderate');
     expect(sl_pct).toBeCloseTo(0.514, 3);
